@@ -23,7 +23,7 @@ report.config <- list(
   params = list(
     # draft.text = "ALTERNATE DRAFT TEXT", #  auto configured to 'DRAFT REPORT' if report.config$top.level$draft = TRUE
     base.directory = getwd(),
-    unvrsl.rmd.path = file.path("..", "..", "..", "..", "Universal_Content", "Skip_Year_Analysis","NCIEA_Report"),
+    unvrsl.rmd.path = file.path("..", "..", "..", "Universal_Content", "Skip_Year_Analysis","NCIEA_Report"),
     custom.rmd.path = file.path("assets", "rmd", "Custom_Content")
   )
 )

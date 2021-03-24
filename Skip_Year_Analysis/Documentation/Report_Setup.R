@@ -19,7 +19,7 @@ require(Literasee)
 ###   An initial setup will include copying the Literasee package assets and
 ###   any custom RMD templates (from "Universal_Content" or another, similar, state)
 
-template.path <- file.path("..", "..", "..", "..", "Universal_Content", "Skip_Year_Analysis", "NCIEA_Report", "Template_Custom_Content")
+template.path <- file.path("..", "..", "..", "Universal_Content", "Skip_Year_Analysis", "NCIEA_Report", "Template_Custom_Content")
 setupReportDirectory(custom.content.path = template.path)
 
 ###   It may be necessary to occasionally update Literasee package assets.
@@ -56,11 +56,11 @@ custom.config <- list(
 )
 
 ##   The following script will merge the report.config (universal) and custom.config lists and return 'report.config' to be used in next steps
-source(file.path("..", "..", "..", "..", "Universal_Content", "Skip_Year_Analysis", "R_Scripts", "Report_Configs.R"))
+source(file.path("..", "..", "..", "Universal_Content", "Skip_Year_Analysis", "R_Scripts", "Report_Configs.R"))
 
 ##   The following script will merge the rmd.files (universal) and custom.files lists and return 'rmd.files' to be used in next steps
 # custom.files <- list(...) # override defaults if desired.  Otherwise a message that universal list will be used.
-source(file.path("..", "..", "..", "..", "Universal_Content", "Skip_Year_Analysis", "R_Scripts", "Report_Content.R"))
+source(file.path("..", "..", "..", "Universal_Content", "Skip_Year_Analysis", "R_Scripts", "Report_Content.R"))
 
 ###   Save report YAML and file configurations
 save(list=c("report.config", "rmd.files"), file = "Report_Configuration_MetaData.rda")
