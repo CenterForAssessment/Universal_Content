@@ -3,10 +3,10 @@
 #####
 
 ###   Set up your R working directory
-setwd("/Users/avi/Data/Demonstration/Skip_Year_Analysis/Documentation")
+setwd("... /Documentation")
 
 ###   Load/Format/Subset Report Data
-load("/Users/avi/Dropbox (SGP)/SGP/State_Alt_Analyses/Demonstration/Skip_Year_Analysis/Data/Demonstration_SGP_2018_2019_PART_2c.Rdata")
+load("../Data/Demonstration_SGP_2018_2019_PART_2c.Rdata")
 Report_Data <- data.table::copy(Demonstration_SGP_2018_2019_PART_2c@Data)[VALID_CASE == "VALID_CASE" & YEAR == '2018_2019' & CONTENT_AREA %in% c("READING", "MATHEMATICS") & SCHOOL_ENROLLMENT_STATUS == "Enrolled School: Yes"]
 
 ###   Load required packages

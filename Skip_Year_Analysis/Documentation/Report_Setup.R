@@ -5,7 +5,7 @@
 #####
 
 ###   Set up your R working directory
-setwd("/Users/avi/Data/Demonstration/Skip_Year_Analysis/Documentation")
+setwd("... /Documentation")
 
 ###   Install/update (if needed) the latest packages
 remotes::install_github("centerforassessment/Literasee")
