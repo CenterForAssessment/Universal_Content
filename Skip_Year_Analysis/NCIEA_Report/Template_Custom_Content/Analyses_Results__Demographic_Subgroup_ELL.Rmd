@@ -1,0 +1,31 @@
+<!--        3.3.2  Demographic Results - English Language Learners (ELL) -->
+```{r, cache=FALSE, echo=FALSE}
+  demog.group <- list(
+    name = "English Language Learners",
+    label = "ELL",
+    variable = "ELL_STATUS",
+    school.variable = "PERCENT_ELL")
+
+  # demog.group[["description"]] <- "defined as ..."
+	demog.group[["count.comment"]] <- paste("As the results show, there is not a considerable difference between the two groups' growth calculation rates under either analysis.  However, roughly 10% fewer students receive a SGP calculation under the skip-year approach.")
+```
+```{r AR_Demog_Results_3a, child = file.path(child.within.child.path, "Analyses_Results__Demographic_Subgroup_1_Counts.Rmd"), eval=TRUE}
+```
+
+```{r, cache=FALSE, echo=FALSE}
+	demog.group[["student.stat.comment"]] <- "The two growth measures are highly correlated and have similar distributional qualities within each group by content area.  There is a slight difference *within* the ELL group's growth calculation between the sequential and skip-year analyses. This results in increasing the otherwise modest growth gap between ELL and non-ELL students in Mathematics between the sequential and skip-year analyses."
+```
+```{r AR_Demog_Results_3b, child = file.path(child.within.child.path, "Analyses_Results__Demographic_Subgroup_2_Student_Corrs_Stats.Rmd"), eval=TRUE}
+```
+
+```{r, cache=FALSE, echo=FALSE}
+  demog.group[["school.cor.comment"]] <- "As the results show, the relationship (correlation) between mean growth and the school percentage of ELL students is moderately negative."
+```
+```{r AR_Demog_Results_3c, child = file.path(child.within.child.path, "Analyses_Results__Demographic_Subgroup_3_School_Corrs_Stats.Rmd"), eval=TRUE}
+```
+
+```{r, cache=FALSE, echo=FALSE}
+	demog.group[["school.diff.comment"]] <- "This plot shows a slightly negative relationship between the MSGP difference and ELL population size for the skip-year subset, particularly in Reading.  This suggests that, on average, schools with higher ELL populations have lower difference values in Reading (i.e. schools with larger ELL populations are slightly more likely to be negatively impacted with the use of skip-year analysis, although this impact appears to modest)."
+```
+```{r AR_Demog_Results_3d, child = file.path(child.within.child.path, "Analyses_Results__Demographic_Subgroup_4_Diffs.Rmd"), eval=TRUE}
+```

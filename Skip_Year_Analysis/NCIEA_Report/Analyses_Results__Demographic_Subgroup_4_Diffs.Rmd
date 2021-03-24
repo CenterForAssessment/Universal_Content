@@ -1,0 +1,42 @@
+
+Figure `r getCounter("figure")+1` is a visual representation of school level MSGP differences as a function of school `r demog.group$label` population size by content area and student inclusion filter`r if (!is.null(params$EOC_subjects)) {paste(" for", params$GL_text)}`. MSGP differences are defined as **skip-year MSGP *minus* one-year MSGP**, and therefore positive numbers can be interpreted as showing an increase in schools' MSGP when using skip-year calculations, and vice-versa. Bubble sizes are representative of school size, and the black line is a LOESS smoothing curve that depicts the moving average MSGP difference relative to the percent `r demog.group$label`.
+
+`r if(!is.null(demog.group$school.diff.comment)) {demog.group$school.diff.comment}`
+
+
+```{r, echo=FALSE, include=FALSE}
+   p <- ggplot() + facet_grid(CONTENT_AREA ~ Schools) +
+							   	 theme(axis.title.x=element_text(size=15), axis.title.y=element_text(size=15),
+   								 			 axis.text.x=element_text(size=12), axis.text.y=element_text(size=12))
+
+   p <- p + geom_point(data = demog_plot_data_gl[!is.na(eval(parse(text = demog.group$school.variable)))],
+   										aes(x = eval(parse(text = demog.group$school.variable)), y = Mean_Difference, size = COUNT_NO_SKIP_SGP), alpha = 0.25, colour="blue") +
+            scale_size_continuous(range = c(1, 9))
+   p <- p + geom_smooth(data = demog_plot_data_gl[!is.na(eval(parse(text = demog.group$school.variable)))],
+   										 aes(x = eval(parse(text = demog.group$school.variable)), y = Mean_Difference), method = "loess", se=FALSE, colour="black")
+   p <- p + geom_text(data=cor_demog, aes(label=paste("r = ", eval(parse(text = paste0("cors_", tolower(demog.group$label)))), sep="")), x = 12, y = -15.5, size = 4.0, colour = "red")
+
+   p <- p + theme(legend.position = "none") #  Needed when N size used for bubbles
+   p <- p + scale_x_continuous(name=paste("School Percent", demog.group$label))
+   p <- p + scale_y_continuous(name="School Mean SGP Differences")
+
+   ###  Note directory from child within child -- it is the first child directory (/assets/rmd/NCIEA_Report)
+   tmp.fig.caption <- paste("Mean SGP difference by percent", demog.group$label, "by content area and student inclusion filter")
+   paste("Mean SGP difference by percent", demog.group$label, "by content area and student inclusion filter")
+   plot.file <- file.path(params$base.directory, "assets", "img", paste0("Skip_Year_SGP_Comp_SGP_x_", demog.group$label, ".svg"))
+	 ggsave(filename = plot.file, plot=p, device = "svg", width = 7.5, height = 5, units = "in")
+```
+
+
+<!-- r, results="asis", echo=FALSE -->
+```{r, fig.cap = tmp.fig.caption, out.width="100%", fig.align='center', fig.topcaption=TRUE, out.extra='data-prefix="Figure"', results="asis", echo=FALSE}
+
+	if (tolower(params$render.format) == "bookdown") {
+    # tmp.fig.caption <- knitr::opts_chunk$get("fig.cap")  # Doesn't work when pasting in chunk - establish prior to use.
+		cat(gsub("</p>\n", "</div>", gsub("<p>", "<div class='caption'>", markdown::markdownToHTML(text=Gmisc::figCapNo(tmp.fig.caption), fragment.only=TRUE))))
+	}
+	knitr::include_graphics(file.path(params$asset.directory, "img", paste0("Skip_Year_SGP_Comp_SGP_x_", demog.group$label, ".svg")), error = FALSE)
+  # # knitr::knit_print(print(getwd())) - to find directory - from child within child it is the first child directory (/assets/rmd/NCIEA_Report)
+	# placeFigure(files = file.path("assets", "img", paste0("Skip_Year_SGP_Comp_SGP_x_", demog.group$label, ".svg")), # not plot.file
+	# 		        caption = paste("Mean SGP difference by percent", demog.group$label, "by content area and student inclusion filter"))
+```

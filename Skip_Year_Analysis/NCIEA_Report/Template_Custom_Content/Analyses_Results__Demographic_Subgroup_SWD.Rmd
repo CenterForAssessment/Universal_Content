@@ -1,0 +1,33 @@
+<!--        3.3.3  Demographic Results - Students with Disabilities (SWD) -->
+```{r, cache=FALSE, echo=FALSE}
+  demog.group <- list(
+    name = "Students with Disabilities",
+    label = "SWD",
+    variable = "IEP_STATUS",
+    school.variable = "PERCENT_SWD")
+
+  demog.group[["description"]] <- "or SWD, indicated as having an IEP"
+	demog.group[["count.comment"]] <- "As the results show, there is not a considerable difference between the two groups' growth calculation rates under either analysis, although students with disabilities (SWD) do receive SGP estimates at slightly lower rate than those without."
+```
+```{r AR_Demog_Results_4a, child = file.path(child.within.child.path, "Analyses_Results__Demographic_Subgroup_1_Counts.Rmd"), eval=TRUE}
+```
+
+```{r, cache=FALSE, echo=FALSE}
+	demog.group[["student.stat.comment"]] <- "The results show that the two growth measures are highly correlated and have similar distributional qualities within each group by content area.  There is a slight difference *within* the SWD group's MSGPs between the sequential and skip-year analyses.  Specifically, this group's typical growth in both ELA and Mathematics are 1-3 points lower using the skip-year analysis, thus increasing the existing growth gap between SWD and non-SWD populations. The gap is 7 points, on average, for the sequential SGP estimates, and increases slightly to approximately 9 points using the skip-year estimates."
+```
+```{r AR_Demog_Results_4b, child = file.path(child.within.child.path, "Analyses_Results__Demographic_Subgroup_2_Student_Corrs_Stats.Rmd"), eval=TRUE}
+```
+
+```{r, cache=FALSE, echo=FALSE}
+  demog.group[["school.cor.comment"]] <- "As the results show, a negative relationship (correlation) exists between typical school growth and the school SWD percentage.  That is, the schools with larger populations of students with disabilities tend to demonstrate lower academic growth."
+```
+```{r AR_Demog_Results_4c, child = file.path(child.within.child.path, "Analyses_Results__Demographic_Subgroup_3_School_Corrs_Stats.Rmd"), eval=TRUE}
+```
+
+```{r, cache=FALSE, echo=FALSE}
+	demog.group[["school.diff.comment"]] <- "The plots show slight negative relationships between MSGP difference and SWD population size for the skip-year subset.  This suggests that, on average, schools with higher SWD populations have lower difference values (i.e. schools with larger SWD populations are slightly more likely to be negatively impacted with the use of skip-year analysis).  Note that the range of school percent SWD is restricted to 0 to 25%."
+
+  demog.group[["school.variable"]] <- "PERCENT_SWD"
+```
+```{r AR_Demog_Results_4d, child = file.path(child.within.child.path, "Analyses_Results__Demographic_Subgroup_4_Diffs.Rmd"), eval=TRUE}
+```

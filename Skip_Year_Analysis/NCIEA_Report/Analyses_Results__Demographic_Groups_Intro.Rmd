@@ -1,0 +1,5 @@
+##  Demographic Subgroup Results
+
+Issues around opportunity to learn can be investigated using growth gap comparisons for relevant demographic subgroups. The following subsections examine differences in the 2019 results for `r numbers2words(demog.group.count)` demographic groups: `r demog.group.description` All demographic summaries include only students who *could* have received a skip-year SGP (i.e. the "skip-year subset") unless otherwise indicated.
+
+Investigations of (differential) impact on student achievement and growth for already at-risk student populations will be critical to help ameliorate impacts of the disruption to education from the COVID-19 pandemic.

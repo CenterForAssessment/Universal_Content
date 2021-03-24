@@ -1,0 +1,30 @@
+```{r, results='asis', echo=FALSE}
+	SGP_Counts <- indiv_smry[GRADE %in% params$seq.grades, c(1:2, 10:12, 14:15)] # Percentages receiving SGPs
+	if (any(as.numeric(params$seq.grades)>9)) {
+		SGP_Counts[, GRADE := as.numeric(GRADE)]
+		setkey(SGP_Counts, CONTENT_AREA, GRADE)
+	}
+	SGP_Counts$CONTENT_AREA <- sapply(SGP_Counts$CONTENT_AREA, capwords, USE.NAMES=FALSE)
+	SGP_Counts$CONTENT_AREA[duplicated(SGP_Counts$CONTENT_AREA)] <- ""
+	SGP_Counts[, Total_Students := prettyNum(Total_Students, preserve.width = "individual", big.mark=',')]
+	SGP_Counts[, Sequential_Count := prettyNum(Sequential_Count, preserve.width = "individual", big.mark=',')]
+	SGP_Counts[, Skip_Count := prettyNum(Skip_Count, preserve.width = "individual", big.mark=',')]
+	setcolorder(SGP_Counts, c(1:4, 6, 5, 7))
+
+	row.names(SGP_Counts) <- NULL
+	setnames(SGP_Counts, c("Content Area", "Grade", "Total Students", "Count", "Percent", "Count", "Percent"))
+	# setnames(SGP_Counts, sapply(names(SGP_Counts), capwords, USE.NAMES=FALSE))
+	SGP_Counts <- as.matrix(SGP_Counts)
+	SGP_Counts[which(SGP_Counts==0)] <- '  --  --  '
+	SGP_Counts[which(SGP_Counts==" 0.0")] <- ' --  -- '
+
+  tmp.caption <- 'Sequential and skip-year SGP counts and percentages for 2019 by content area and grade'
+  knitr::knit_print(htmlTable::htmlTable(SGP_Counts, title="",
+    align=paste(rep('r', ncol(SGP_Counts)), collapse=''),
+    n.cgroup=c(3, 2, 2), cgroup=c("", "Sequential", "Skip Year"),
+    caption=tblCap(tmp.caption), css.class="gmisc_table breakboth"))
+  # cat(dualTable(SGP_Counts,
+  # 	align=paste(rep('r', ncol(SGP_Counts)), collapse=''),
+	# 	n.cgroup=c(3, 2, 2), cgroup=c("", "Sequential", "Skip Year"),
+	# 	caption='Sequential and skip-year SGP counts and percentages for 2019 by content area and grade'))
+```

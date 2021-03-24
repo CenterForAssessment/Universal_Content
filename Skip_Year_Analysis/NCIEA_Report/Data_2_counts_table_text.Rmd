@@ -1,0 +1,75 @@
+```{r, echo=FALSE, include=FALSE}
+###  Conditional text for next paragraph
+  if (is.null(params$skip.grades.list)) {
+		skip.excluded.grade <- paste0(ord(as.numeric(setdiff(params$seq.grades, params$skip.grades))), " grade")
+	} else { #  4<sup>th</sup> grade ELA and mathematics and 5<sup>th</sup> grade science
+		low.grades <- sort(sapply(sapply(params$seq.grades.list, as.numeric), min))
+    # length(low.grades) <- 4; low.grades[4] <- 6; names(low.grades)[4] <- "SOCIAL_STUDIES" # For testing ca_3 with Utah
+		ca_1 <- c(names(low.grades[1]), names(which(diff(low.grades)==0)))
+		ca_1_camel <- sapply(ca_1, capwords) # sub("ela", "ELA", tolower(ca_1))
+		ca_1_text <- paste0(ord(low.grades[1]), " grade ", paste(paste(head(ca_1_camel, -1), collapse=", "), tail(ca_1_camel, 1), sep=" and "))
+		low.grades <- low.grades[-(which(low.grades==low.grades[1]))]
+		ca_2 <- c(names(low.grades[1]), names(which(diff(low.grades)==0)))
+		ca_2_camel <- sapply(ca_2, capwords)
+		if (length(ca_2) > 1) {
+			ca_2_text <- paste0(", ", ord(low.grades[1]), " grade ", paste(paste(head(ca_2_camel, -1), collapse=", "), tail(ca_2_camel, 1), sep=" and "))
+		} else ca_2_text <- paste0(ord(low.grades[1]), " grade ", ca_2_camel)
+		low.grades <- low.grades[-(which(low.grades==low.grades[1]))]
+		if (length(low.grades) > 0) {  #  support up to 3 different grade starts.
+			ca_3 <- c(names(low.grades[1]), names(which(diff(low.grades)==0)))
+			ca_3_camel <- sapply(ca_3, capwords)
+			if (length(ca_3) > 1) {
+				ca_3_text <- paste0(" and ", low.grades[1], "grade ", paste(paste(head(ca_3_camel, -1), collapse=", "), tail(ca_3_camel, 1), sep=" and "))
+			} else ca_3_text <- paste0(ord(low.grades[1]), " grade ", ca_3_camel)
+      # separate complex lists (multiple 'ands') with ', and' http://www.sussex.ac.uk/informatics/punctuation/comma/listing
+			skip.excluded.grade <- paste(ca_1_text, paste(ca_2_text, ca_3_text, sep=", and "), sep=", ")
+		} else 	skip.excluded.grade <- paste(ca_1_text, ca_2_text, sep=", and ")
+	}
+```
+
+```{r, cache=TRUE, echo=FALSE, include=FALSE, Student_Lev_Values}
+	indiv_smry <- Report_Data[VALID_CASE=='VALID_CASE' & eval(parse(text = params$seq.subset)), list(
+                  SGP_Corr = round(cor(eval(parse(text = params$seq.sgp)), eval(parse(text = params$skip.sgp)), use="pairwise.complete"), 2),
+									Mean_Sequential = round(mean(eval(parse(text = params$seq.sgp)), na.rm = TRUE), 1),
+									SD_Sequential = round(sd(eval(parse(text = params$seq.sgp)), na.rm = TRUE), 1),
+                  Score_Corr_Sequential = round(cor(SCALE_SCORE, NO_SKIP_SGP_SCALE_SCORE_PRIOR_STANDARDIZED, use="pairwise.complete"), 2),
+									Mean_Skip = round(mean(eval(parse(text = params$skip.sgp)), na.rm = TRUE), 1),
+									SD_Skip = round(sd(eval(parse(text = params$skip.sgp)), na.rm = TRUE), 1),
+                  Score_Corr_Skip = round(cor(SCALE_SCORE, SCALE_SCORE_PRIOR_STANDARDIZED, use="pairwise.complete"), 2),
+									Total_Students = .N,
+									Sequential_Count = sum(!is.na(eval(parse(text = params$seq.sgp)))),
+									Skip_Count = sum(!is.na(eval(parse(text = params$skip.sgp))))), keyby = list(CONTENT_AREA, GRADE)]
+	indiv_smry[, Difference := Skip_Count - Sequential_Count]
+	indiv_smry[, Pct_Sequential := round((Sequential_Count/Total_Students)*100, 1)]
+	indiv_smry[, Pct_Skip := round((Skip_Count/Total_Students)*100, 1)]
+	indiv_smry[, Difference_Pct := Pct_Skip - Pct_Sequential]
+
+	indiv_counts <- Report_Data[VALID_CASE=='VALID_CASE' & eval(parse(text = params$skip.subset)), list( # only skip.grades -- possible to get both
+									Total_Students = .N,
+									Sequential_Count = sum(!is.na(eval(parse(text = params$seq.sgp)))),
+									Skip_Count = sum(!is.na(eval(parse(text = params$skip.sgp)))),
+									Both = sum(!is.na(eval(parse(text = params$seq.sgp))) & !is.na(eval(parse(text = params$skip.sgp)))),
+									Neither = sum(is.na(eval(parse(text = params$seq.sgp))) & is.na(eval(parse(text = params$skip.sgp)))),
+									Sequential_NO_Skip = sum(!is.na(eval(parse(text = params$seq.sgp))) & is.na(eval(parse(text = params$skip.sgp)))),
+									Skip_NO_Sequential = sum(!is.na(eval(parse(text = params$skip.sgp))) & is.na(eval(parse(text = params$seq.sgp)))))]
+	both.pct <- round((indiv_counts$Both/indiv_counts$Total_Students)*100, 1)
+	neither.pct <- round((indiv_counts$Neither/indiv_counts$Total_Students)*100, 1)
+	sequential.pct <- round((indiv_counts$Sequential_NO_Skip/indiv_counts$Total_Students)*100, 1)
+	skip.pct <- round((indiv_counts$Skip_NO_Sequential/indiv_counts$Total_Students)*100, 1)
+	# both.pct + neither.pct + sequential.pct + skip.pct # should = ~100
+
+	Report_Data[, SCALE_SCORE_STANDARDIZED := scale(SCALE_SCORE), by=c("CONTENT_AREA", "GRADE")]
+	missing <- Report_Data[is.na(eval(parse(text = params$skip.sgp))) & !is.na(eval(parse(text = params$seq.sgp))) & eval(parse(text = params$skip.subset)) & CONTENT_AREA %in% params$subject_order,
+													 list(SCALE_SCORE_STANDARDIZED, NO_SKIP_SGP_SCALE_SCORE_PRIOR_STANDARDIZED, eval(parse(text = params$seq.sgp)), CONTENT_AREA, GRADE)]
+	setnames(missing, "V3", params$seq.sgp)
+	missing_smry <- missing[, list(
+													Mean_SS = mean(SCALE_SCORE_STANDARDIZED, na.rm = TRUE),
+													Mean_SS_Prior = mean(NO_SKIP_SGP_SCALE_SCORE_PRIOR_STANDARDIZED, na.rm = TRUE),
+													Mean_SGP = mean(eval(parse(text = params$seq.sgp)), na.rm = TRUE),
+													N = .N)]#, keyby = c("CONTENT_AREA", "GRADE")]
+
+	indiv.q80 <- as.numeric(Report_Data[VALID_CASE=='VALID_CASE' & eval(parse(text = params$skip.subset)),
+															as.list(quantile(abs(eval(parse(text = params$skip.sgp)) - eval(parse(text = params$seq.sgp))), probs=0.8, na.rm=TRUE))])
+```
+
+Table `r tblNum(1)` provides frequencies and proportions associated with student skip-year and one-year SGP counts by year, content area, and grade. An important aspect of Table `r tblNum(1)` is that there are no `r skip.excluded.grade` skip-year SGPs because no prior score exists with which to calculate growth since there is no exam administered two grades prior. The absence of SGPs for an entire grade level has a significant impact on comparisons done at the elementary school level. Since one-year growth summaries (mean or median) usually include the `r skip.excluded.grade` SGPs, one-year to skip-year comparisons for elementary schools are not well aligned (using all growth data) since different grades are included. We discuss this issue later and provide supplemental analyses at the school level that include only grades and content areas that could have both one-year and skip-year SGPs calculated.

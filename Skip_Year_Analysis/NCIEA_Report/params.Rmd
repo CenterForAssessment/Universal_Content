@@ -1,0 +1,209 @@
+
+```{r, echo=FALSE, include=FALSE}
+  tmp_envs <- environment()
+  try(if(bindingIsLocked("params", env = tmp_envs)) unlockBinding("params", env = tmp_envs))  #  required if params is sent in through YAML
+
+  ###
+	###   Establish directories and paths
+	###
+
+  ###   Working Directory
+  if (is.null(params$working.directory)) {
+    if (!is.null(knitr::opts_knit$get("output.dir"))) {
+      params$working.directory <- knitr::opts_knit$get("output.dir")
+    } else params$working.directory <- getwd()
+  }
+
+  ##  Create assets and/or img directories if doesn't exist
+  if (!dir.exists(file.path(params$base.directory, "assets", "img"))) {
+    dir.create(file.path(params$base.directory, "assets", "img"), showWarnings = FALSE, recursive = TRUE)
+  }
+  params$asset.directory <- ifelse(tolower(params$render.format)=="bookdown", file.path(".", "assets"), file.path("..", "assets"))
+
+  # tmp.leader <- ifelse(tolower(params$render.format)=="bookdown", file.path(".."), file.path("..", "..", "..", ".."))
+  tmp.leader <- getPath(params$base.directory, "..") # Need normalized path again??? getPath gets one directory higher than base.directory here.  
+  if (is.null(params$gof.path.seq)) {
+    params$gof.path.seq <- file.path(tmp.leader, "Sequential_GOF", "Goodness_of_Fit")
+  }
+  if (is.null(params$gof.path.skip)) {
+    params$gof.path.skip <- file.path(tmp.leader, "Goodness_of_Fit")
+  }
+
+
+  ###
+	###   Lists of state specific variables included in the report.
+	###
+
+  ###   Draft
+  # Example draft.text <- "\\vspace{16pt} \\noindent  \\textbf{FOR INTERNAL USE ONLY - DO NOT CIRCULATE!} \\vspace{20pt}"
+  if (is.null(params$draft.text)) {
+    params$draft.text <- ""
+  }
+  if (params$draft.text != "") {
+    if (!grepl("[\\]|[<]", params$draft.text)) {
+      params$draft.text <- paste0("<p style='text-align: center;'><br><strong>", params$draft.text, "</strong><br></p>")
+      # params$draft.text <- paste0("\\vspace{16pt} \\noindent  \\textbf{", params$draft.text, "} \\vspace{20pt}")
+    }
+  }
+
+  ###   State name and education organization
+  if (toupper(params$state.name)=="DEMONSTRATION") {
+    params$state.abv <- "DEMO"
+  }
+  if (is.null(params$state.abv)) {
+    if (is.null(params$state.name)) stop("State name or abbreviation parameter (state.name or state.abv) must be provided at a minimum!")
+    tmp.state.abv <- params$state.abv <- datasets::state.abb[datasets::state.name == params$state.name] # getStateAbbreviation(params$state.name, type="Abbreviation") # Doesn't work in all cases...
+  } else tmp.state.abv <- params$state.abv[[1]]
+  if (is.null(params$state.name)) {
+    if (is.null(params$state.abv)) stop("State name or abbreviation parameter (state.name or state.abv) must be provided at a minimum!")
+    tmp.state.name <- params$state.name <- SGP::getStateAbbreviation(tmp.state.abv, type="state")
+  } else tmp.state.name <- params$state.name[[1]]
+
+  if (is.null(params$state.org)) {
+    params$state.org <- SGPstateData[[tmp.state.abv]][["Assessment_Program_Information"]][["Organization"]][["Name"]]
+  }
+  if (is.null(params$state.org.abv)) {
+    params$state.org.abv <- SGPstateData[[tmp.state.abv]][["Assessment_Program_Information"]][["Organization"]][["Abbreviation"]]
+  }
+
+  if (is.null(params$test.name)) {
+    params$test.name <- SGPstateData[[tmp.state.abv]][["Assessment_Program_Information"]][["Assessment_Name"]]
+  }
+  if (is.null(params$test.abv)) {
+    params$test.abv <- SGPstateData[[tmp.state.abv]][["Assessment_Program_Information"]][["Assessment_Abbreviation"]]
+  }
+  if (is.null(params$test.url)) {
+    params$test.url <- SGPstateData[[tmp.state.abv]][["Assessment_Program_Information"]][["Organization"]][["URL"]]
+  }
+  if (is.null(params$test.trans.year)) {
+    params$test.trans.year <- SGPstateData[[tmp.state.abv]][["Assessment_Program_Information"]][["Assessment_Transition"]][["Year"]]
+    if (!is.null(params$test.trans.year)) {
+      if (grepl("2019", params$test.trans.year)) {
+        params$test.trans.name <- SGPstateData[[tmp.state.abv]][["Assessment_Program_Information"]][["Assessment_Transition"]][["Assessment_Abbreviation"]]
+      } else params$test.trans.year <- NULL
+    }
+  }
+
+  ###   SGP version to use (SIMEX, BASELINE, UNCORRECTED, etc.)
+  if (is.null(params$seq.sgp)) {
+    params$seq.sgp <- "NO_SKIP_SGP"
+  }
+  if (is.null(params$skip.sgp)) {
+    params$skip.sgp <- "SGP"
+  }
+
+  if (is.null(params$sgp.max.order)) {
+    # if (any(grepl("^SGP_ORDER_", names(Report_Data)))){
+    #   params$sgp.max.order <- suppressWarnings(max(as.numeric(unlist(strsplit(grep("^SGP_ORDER_", names(Report_Data), value=TRUE), "_"))), na.rm=TRUE))
+    # } else {
+      params$sgp.max.order <- max(sapply(strsplit(unique(Report_Data[, as.character(SGP_NORM_GROUP)]), ";"), length))-1
+    # }
+  }
+
+  ###   Year Format
+  if (is.null(params$Year_Long_Form)) {
+    params$Year_Long_Form <- grepl("_", unique(Report_Data[, YEAR]))
+  }
+
+  ###   Content areas
+  if (is.null(params$GL_subjects)) {
+    params$GL_subjects <- unique(Report_Data[!is.na(SGP) & GRADE != "EOCT", CONTENT_AREA])
+  }
+  if (is.null(params$GL_camel)) {
+    params$GL_camel <- sapply(params$GL_subjects, capwords) # sub("ela", "ELA", tolower(params$GL_subjects))
+  }
+  params$GL_text <- paste(paste(head(params$GL_camel, -1), collapse=", "), tail(params$GL_camel, 1), sep=" and ") # sub("ela", "ELA", tolower(params$GL_text))
+  params$GL_text_long <- sub("ELA", "English language arts (ELA)", params$GL_text) # "English language arts (ELA) and mathematics"
+
+  if (is.null(params$GoF_GL_subjects)) {
+    params$GoF_GL_subjects <- params$GL_subjects
+  }
+
+  # if (is.null(params$EOC_subjects)) {
+  #   params$EOC_subjects <- unique(Report_Data[!is.na(SGP) & GRADE == "EOCT", CONTENT_AREA])
+  # }
+  # if (length(params$EOC_subjects > 0)) {
+  #   params$eoct.tf <- FALSE
+  #   params$EOC_subjects <- NULL
+  # } else  params$eoct.tf <- TRUE
+
+  if (is.null(params$EOC_subjects)) {
+    params$subject_order <- params$GL_subjects
+  } else params$subject_order <- c(params$GL_subjects, params$EOC_subjects)
+
+  if (is.null(params$GoF_EOC_subjects)) {
+    params$GoF_EOC_subjects <- params$EOC_subjects
+  }
+
+  ###   Grades
+  if (is.null(params$seq.grades)) {
+    params$seq.grades <- unique(Report_Data[!is.na(NO_SKIP_SGP), GRADE])
+  }
+  if (is.null(params$skip.grades)) {
+    params$skip.grades <- unique(Report_Data[!is.na(SGP), GRADE])
+  }
+  Seq_Grades <- unique(Report_Data[!is.na(NO_SKIP_SGP) & GRADE != "EOCT", GRADE, CONTENT_AREA])
+  Seq_Grades_Count <- Seq_Grades[, .(Count = length(unique(GRADE))), by = CONTENT_AREA]
+  if (!all(diff(Seq_Grades_Count$Count)==0)) {
+    params$seq.grades.list <- list()
+    for (ca in params$subject_order){
+      params$seq.grades.list[[ca]] <- Seq_Grades[CONTENT_AREA == ca, GRADE]
+    }  
+    ###  Sequential Subset Restriction :: e.g. ((CONTENT_AREA %in% c('ELA', 'MATHEMATICS') & GRADE %in% 4:10)|(CONTENT_AREA == 'SCIENCE' & GRADE %in% 5:10))
+    seq.grds <- sapply(params$seq.grades.list, as.numeric)
+    tmp.subset <- "("
+    while(length(seq.grds) > 0) {
+      common.grds <- names(seq.grds[duplicated(seq.grds)])
+      if (length(common.grds) > 0) {
+        tmp.subset <- paste0(tmp.subset, "(CONTENT_AREA %in% c('", paste(names(seq.grds)[1], common.grds, sep="', '"), "') & GRADE %in% ", paste0(range(seq.grds[[1]]), collapse=":"), ")")
+      } else tmp.subset <- paste0(tmp.subset, "(CONTENT_AREA == '", names(seq.grds)[1], "') & GRADE %in% ", paste0(range(seq.grds[[1]]), collapse=":"), ")")
+      seq.grds <- seq.grds[!duplicated(seq.grds)][-1]
+      if (length(seq.grds) > 0) tmp.subset <- paste0(tmp.subset, "|")
+    }
+    params$seq.subset <- tmp.subset
+  } else {
+    params$seq.subset <- paste0("GRADE %in% c('", paste(params$seq.grades, collapse="','"), "')")
+  }
+  Skip_Grades <- unique(Report_Data[!is.na(SGP) & GRADE != "EOCT", GRADE, CONTENT_AREA])
+  Skip_Grades_Count <- Skip_Grades[, .(Count = length(unique(GRADE))), by = CONTENT_AREA]
+  if (!all(diff(Skip_Grades_Count$Count)==0)) {
+    params$skip.grades.list <- list()
+    for (ca in params$subject_order){
+      params$skip.grades.list[[ca]] <- Skip_Grades[CONTENT_AREA == ca, GRADE]
+    }
+    ###  Skip Year Subset Restriction :: e.g. ((CONTENT_AREA %in% c('ELA', 'MATHEMATICS') & GRADE %in% 5:10)|(CONTENT_AREA == 'SCIENCE' & GRADE %in% 6:10))
+    skp.grds <- sapply(params$skip.grades.list, as.numeric)
+    tmp.subset <- "("
+    while(length(skp.grds) > 0) {
+      common.grds <- names(skp.grds[duplicated(skp.grds)])
+      if (length(common.grds) > 0) {
+        tmp.subset <- paste0(tmp.subset, "(CONTENT_AREA %in% c('", paste(names(skp.grds)[1], common.grds, sep="', '"), "') & GRADE %in% ", paste0(range(skp.grds[[1]]), collapse=":"), ")")
+      } else tmp.subset <- paste0(tmp.subset, "(CONTENT_AREA == '", names(skp.grds)[1], "') & GRADE %in% ", paste0(range(skp.grds[[1]]), collapse=":"), ")")
+      skp.grds <- skp.grds[!duplicated(skp.grds)][-1]
+      if (length(skp.grds) > 0) tmp.subset <- paste0(tmp.subset, "|")
+    }
+    params$skip.subset <- tmp.subset
+  } else {
+    params$skip.subset <- paste0("GRADE %in% c('", paste(params$skip.grades, collapse="','"), "')")
+  }
+
+  ###   Minimum School Size
+  if (is.null(params$min.school.size)) {
+    params$min.school.size <- 10
+  }
+
+  if (ifelse(!exists("github.download.tf"), FALSE, github.download.tf)) {
+    params$unvrsl.rmd.path <- file.path("assets", "rmd", "github_children")
+    options("renderMultiDocument_Message" = paste0(
+                "\tChild .Rmd files have been downloaded from Github and 'unvrsl.rmd.path' parameter temporarily set to '", file.path(".", "assets", "github_children"), "'!!!\n\t",
+                "These files may be inspected and edited as needed before re-rendering. In order to keep files for future use/re-rendering, set    \n\t",
+                "'unvrsl.rmd.path' to '", file.path(".", "assets", "rmd", "github_children"), "' in 'report_params' list or 'params' YAML to avoid file re-download/overwrite.     "))
+  }
+
+  if (is.null(params$seq.code.url)) {
+    params$seq.code.url <- paste0("https://github.com/CenterForAssessment/", params$state)
+  }
+  if (is.null(params$skip.code.url)) {
+    params$skip.code.url = paste0("https://github.com/CenterForAssessment/SGP_Research/tree/master/", params$state, "/Skip_Year_Analysis")
+  }
+```

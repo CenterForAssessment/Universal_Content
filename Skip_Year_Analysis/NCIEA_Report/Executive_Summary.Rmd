@@ -1,0 +1,73 @@
+```{r, cache=FALSE, echo=FALSE, include=FALSE}
+###   Any necessary state-specific data formatting and variable creation - DON'T CACHE!!!
+
+##    Calculate Differences if not already done
+	Report_Data[, DIFF := as.numeric(NA)]
+	Report_Data[, DIFF := SGP - NO_SKIP_SGP]
+	Report_Data[, ABS_DIFF := as.numeric(NA)]
+	Report_Data[, ABS_DIFF := abs(SGP - NO_SKIP_SGP)]
+
+###   Test Name (Abbreviation)
+if(length(params$test.name) > 1) {
+	test.name.abv <- paste0(params$test.name[1], " (", params$test.abv[1], ") and ", params$test.name[2], " (", params$test.abv[2], ")")
+} else test.name.abv <- paste0(params$test.name, " (", params$test.abv, ")")
+
+###   Executive Summary figures/stats
+##    Calculate School Level Values
+	# At the individual student level there is, not surprisingly, a very high correlation...
+	exec.indiv.correlations <- Report_Data[VALID_CASE=='VALID_CASE' & eval(parse(text = params$skip.subset)), list(
+																					cor(eval(parse(text = params$skip.sgp)), eval(parse(text = params$seq.sgp)), use="complete.obs"))]#, keyby=c("CONTENT_AREA")]
+  exec.indiv.cor <- round(exec.indiv.correlations[,V1], 2)
+
+  # This is the case where more than X percent of the students have skip-year and one-year SGP differences that exceed X in magnitude.
+	exec.indiv.quantiles <- Report_Data[VALID_CASE=='VALID_CASE' & eval(parse(text = params$skip.subset)), as.list(
+																					quantile(abs(eval(parse(text = params$skip.sgp)) - eval(parse(text = params$seq.sgp))), probs=(1:19)/20, na.rm=TRUE))]#, keyby=c("CONTENT_AREA")]
+  exec.indiv.qntl <- round(exec.indiv.quantiles[,`75%`],0) # should already be integer
+
+
+##    Calculate School Level Values
+	exec_sch_sum <- Report_Data[VALID_CASE=='VALID_CASE' & !is.na(SCHOOL_NUMBER), list(
+      			          MEAN_NO_SKIP_SGP = mean(eval(parse(text = params$seq.sgp)), na.rm = TRUE),
+            			    MEAN_SKIP_SGP = mean(eval(parse(text = params$skip.sgp)), na.rm = TRUE)),
+            			  keyby = "SCHOOL_NUMBER"][,DIFFERENCE_SKIP_NO_SKIP_MEAN_SGP:=round(abs(MEAN_SKIP_SGP-MEAN_NO_SKIP_SGP), 2)] # keyby = c("CONTENT_AREA", "SCHOOL_NUMBER")
+
+	# At the school level there is, again not surprisingly, a very high correlation (~ 0.9)
+	exec.sch.correlations <- exec_sch_sum[, list(cor(MEAN_SKIP_SGP, MEAN_NO_SKIP_SGP, use="complete.obs"))] # , keyby=c("CONTENT_AREA")
+  exec.sch.cor <- round(exec.sch.correlations[,V1], 2)
+
+	# the high correlation does mask approximately X percent of the schools whose mean/median SGP differs by X or more.
+	exec.sch.quantiles <- exec_sch_sum[, as.list(quantile(DIFFERENCE_SKIP_NO_SKIP_MEAN_SGP, probs=(1:19)/20, na.rm=TRUE))] #, keyby=c("CONTENT_AREA")]
+  exec.sch.qntl <- round(exec.sch.quantiles[,`90%`], 0)
+
+  if(is.null(params$skip.grades.list)) {
+    excluded.grade.text <- paste0(ord(as.numeric(setdiff(params$seq.grades, params$skip.grades))), " grade")
+  } else excluded.grade.text <- "certain grade level"
+```
+
+```{r, results='asis', echo=FALSE}
+
+	###  Not sure this process can be simplified any...  
+	###  Needs to be a YAML chunk for bookdown, but just regular text for pagedown (Literasee nciea_report template)
+	# wmwd <- knitr::knit_print(print(getwd()))
+	if (tolower(params$render.format) == "bookdown") {
+		exec.sum.text <- readLines(file.path(params$unvrsl.rmd.path[[1]], "Executive_Summary_Text.Rmd"))
+	} else {
+		exec.sum.text <- readLines("Executive_Summary_Text.Rmd")
+	}
+
+  param.to.replace <- unique(do.call(rbind, str_match_all(exec.sum.text, "PRM__\\s*(.*?)\\s*__PRM")))
+  for (i in seq(nrow(param.to.replace))) exec.sum.text <- gsub(param.to.replace[i,1], eval(parse(text=paste0("params[['", param.to.replace[i,2], "']][[1]]"))), exec.sum.text, fixed=TRUE)
+
+  text.to.replace <- unique(do.call(rbind, str_match_all(exec.sum.text, "TXT__\\s*(.*?)\\s*__TXT")))
+  for (i in seq(nrow(text.to.replace))) exec.sum.text <- gsub(text.to.replace[i,1], eval(parse(text=text.to.replace[i,2])), exec.sum.text, fixed=TRUE)
+
+	if (tolower(params$render.format) == "bookdown") {
+		cat(c("---", "abstract: |"), sep = "\n")
+		cat("\t", exec.sum.text, sep = "\n\t")
+		cat(c("", "---"), sep = "\n")
+	} else {
+		cat(c("","<div class='exec-summary'>", "", "# Executive Summary {-}"), sep = "\n")
+		cat(exec.sum.text, sep = "\n")
+		cat(c("", "</div>"), sep = "\n")
+	}
+```

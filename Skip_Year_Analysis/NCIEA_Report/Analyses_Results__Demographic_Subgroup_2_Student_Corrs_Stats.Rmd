@@ -1,0 +1,18 @@
+Table `r tblNum(1)` provides the correlations between sequential and skip-year SGP estimates for `r demog.group$label`/non-`r demog.group$label` students that had both a sequential and skip-year SGP calculated in 2019, as well as the means and standard deviations for these values. `r if(!is.null(demog.group$student.stat.comment)) {demog.group$student.stat.comment}`
+
+```{r, results='asis', echo=FALSE}
+	demog_corrs <- demog_smry[, 1:7][order(match(CONTENT_AREA, params$subject_order))] # Means/SDs/Cors
+	demog_corrs[, CONTENT_AREA := sapply(CONTENT_AREA, capwords, USE.NAMES=FALSE)]
+	demog_corrs[duplicated(CONTENT_AREA), CONTENT_AREA := ""]
+	demog_corrs[, demog.group$variable := gsub(".*: ", "", eval(parse(text = demog.group$variable)))]
+
+	row.names(demog_corrs) <- NULL
+	setnames(demog_corrs, demog.group$variable, paste0(demog.group$label, "_STATUS"))
+	setnames(demog_corrs, sapply(gsub("_Sequential|_Skip", "", names(demog_corrs)), capwords, special.words=c(demog.group$label, "ED", "EL", "ELL", "FRL", "IEP", "SD", "SGP", "SWD")))
+
+	tmp.caption <- paste("Sequential and skip-year SGP correlation and mean/standard deviation by content area and",  demog.group$label, "status")
+	knitr::knit_print(htmlTable::htmlTable(as.matrix(demog_corrs), title="", align="rrccccc", 
+		n.rgroup = rep(2, nrow(demog_corrs)/2), rnames=FALSE,
+	  n.cgroup=c(3, 2, 2), cgroup=c("", "Sequential", "Skip Year"),
+	  caption=tblCap(tmp.caption), css.class="gmisc_table breakboth"))
+```

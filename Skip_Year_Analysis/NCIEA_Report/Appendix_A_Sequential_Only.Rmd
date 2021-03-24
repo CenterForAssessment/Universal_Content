@@ -1,0 +1,56 @@
+##  Sequential Analyses Only
+
+```{r, cache=FALSE, results="asis", echo=FALSE}
+	gof.year <- ifelse(params$Year_Long_Form, "2018_2019", "2019")
+	gof.type <- NULL
+	if (grepl("BASELINE", params$seq.sgp)) gof.type <- ".BASELINE"
+	if (grepl("SIMEX$", params$seq.sgp)) gof.type <- paste0(gof.type, ".SIMEX")
+	if (grepl("SIMEX_RANKED", params$seq.sgp)) gof.type <- paste0(gof.type, ".RANKED_SIMEX")
+
+	seq.only.grd <- list()
+	if (is.null(params$skip.grades.list)) {
+		for (ca in params$GoF_GL_subjects) seq.only.grd[[ca]] <- setdiff(params$seq.grades, params$skip.grades)
+		skip.excluded.grade.gof <- paste(skip.excluded.grade, params$GL_text)
+	} else {
+		for (ca in params$GoF_GL_subjects) seq.only.grd[[ca]] <- setdiff(params$seq.grades.list[[ca]], params$skip.grades.list[[ca]])
+		skip.excluded.grade.gof <- skip.excluded.grade
+	}
+	seq.only.plots <- NULL
+	# wmwd1 <- knitr::knit_print(print(getwd())) # ...Documentation/assets/rmd/NCIEA_Report
+
+	for (ca in params$GoF_GL_subjects) {
+		seq.plots <-  unique(gsub(".png|.pdf", "", list.files(file.path(params$gof.path.seq[[1]], paste0(ca, ".", gof.year, gof.type)))))
+		seq.plots <- seq.plots[order(seq.plots)][seq.plots != "Decile_Tables"]
+
+		tmp.prg <- sapply(seq.plots, function(f) strsplit(f, ";")[[1]])
+		tmp.grd <- sapply(tmp.prg, function(f) gsub(paste0(gof.year, "_", sub("MATHEMATICS", "MATH", ca), "_"), "", f[1]))
+
+		seq.only.plots <- c(seq.only.plots, file.path(params$gof.path.seq[[1]], paste0(ca, ".", gof.year, gof.type), paste0(seq.plots[tmp.grd==seq.only.grd[[ca]]], ".png")))
+	}
+
+	seq.tmp.dir <- lapply(file.path(params$base.directory, "assets", "img", "Goodness_of_Fit", "Sequential", gsub(params$gof.path.seq, "", seq.only.plots, fixed=TRUE)), strsplit, "/")
+	for (d in seq(seq.tmp.dir)) {
+		if(fe.tf <- !file.exists(file.path(params$base.directory, "assets", "img", "Goodness_of_Fit", "Sequential", tail(seq.tmp.dir[[d]][[1]], 2)[1]))) {
+			dir.create(file.path(params$base.directory, "assets", "img", "Goodness_of_Fit", "Sequential", tail(seq.tmp.dir[[d]][[1]], 2)[1]), recursive = TRUE)
+		} # fe.tf to trap TRUE/FALSE output
+	}
+	documentation.plot.paths <- file.path(params$base.directory, "assets", "img", "Goodness_of_Fit", "Sequential", 	gsub(params$gof.path.seq, "", seq.only.plots, fixed=TRUE))
+	documentation.plot.place <- file.path(params$asset.directory, "img", "Goodness_of_Fit", "Sequential", gsub(params$gof.path.seq, "", seq.only.plots, fixed=TRUE))
+	fc.tf.seqo <- file.copy(seq.only.plots, documentation.plot.paths)
+
+	tmp.gof.caption <- paste("Sequential growth goodness of fit plots for", skip.excluded.grade.gof, "(no skip-year analyses)")
+	# placeFigure(
+	# 	files = documentation.plot.place,
+	# 	rows = ceiling(length(params$GoF_GL_subjects)/2), columns = 2,
+	# 	caption = paste("Sequential growth goodness of fit plots for", skip.excluded.grade.gof, "(no skip-year analyses)"))
+```
+
+<!--  Here's how to do it with knitr::include_graphics but doesn't work well with the look in the other files.  Need to re-think  Leave out List of Figures from Appendix report for now...-->
+```{r, gof-seq-only, fig.cap = tmp.gof.caption, fig.show = 'hold', out.width="50%", out.extra='data-prefix="Figure"', results="asis", echo=FALSE}
+	#  paged.js Doesn't like named figure references - tried 'GOF_seq_only'
+	if (tolower(params$render.format) == "bookdown") {
+		# tmp.gof.caption <- knitr::opts_current$get("fig.cap") # Doesn't work when pasting in chunk - establish prior to use.
+		cat(gsub("</p>\n", "</div>", gsub("<p>", "<div class='caption'>", markdown::markdownToHTML(text=Gmisc::figCapNo(tmp.gof.caption), fragment.only=TRUE))))
+	}
+	knitr::include_graphics(c(documentation.plot.place), error=FALSE)
+```

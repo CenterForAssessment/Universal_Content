@@ -1,0 +1,23 @@
+Table `r tblNum(1)` provides the correlations between school level sequential and skip-year MSGP estimates and the schools' percentage of `r demog.group$label` students. As with the school level summary results in the previous section, these summaries are provided for both 1) all students (including `r skip.excluded.graders`) and 2) for the subset of students that have both a sequential and skip-year SGP calculated in 2019. `r if(!is.null(demog.group$school.cor.comment)) {demog.group$school.cor.comment}`
+
+
+```{r, results='asis', echo=FALSE}
+###   Calculate School Level Demographic Group Summaries
+	sch_demog_cor <- sch_demog_msgp[, list(
+  	  PCT_Demog_x_Sequential = round(cor(MEAN_NO_SKIP_SGP, eval(parse(text = demog.group$school.variable)), use="complete.obs"), 2),
+    	PCT_Demog_x_Skip_Year = round(cor(MEAN_SKIP_SGP, eval(parse(text = demog.group$school.variable)), use="complete.obs"), 2)), keyby = c("CONTENT_AREA")]
+	sch_demog_cor_x <- sch_demog_msgp_x[, list(
+  	  PCT_Demog_x_Sequential = round(cor(MEAN_NO_SKIP_SGP, eval(parse(text = demog.group$school.variable)), use="complete.obs"), 2),
+    	PCT_Demog_x_Skip_Year = round(cor(MEAN_SKIP_SGP, eval(parse(text = demog.group$school.variable)), use="complete.obs"), 2)), keyby = c("CONTENT_AREA")]
+
+	cor_tbl_demog <- data.table(Filter = c("All Students", rep("", length(params$GL_subjects)-1), "Skip-Year Subset", rep("", length(params$GL_subjects)-1)),
+															rbindlist(list(sch_demog_cor[CONTENT_AREA %in% params$GL_subjects], sch_demog_cor_x[CONTENT_AREA %in% params$GL_subjects])))
+	cor_tbl_demog[, CONTENT_AREA := sapply(CONTENT_AREA, capwords)]
+	setnames(cor_tbl_demog, sapply(gsub("PCT_Demog_x_", "", names(cor_tbl_demog)), capwords))
+
+	tmp.caption <- paste("School level correlations between mean SGPs and percent",  demog.group$label, "by student inclusion filter")
+	knitr::knit_print(htmlTable::htmlTable(as.matrix(cor_tbl_demog), title="",
+	  align=paste(rep("r", ncol(cor_tbl_demog)), collapse=""),
+		n.rgroup = rep(length(params$GL_subjects), 2), rnames=FALSE,
+	  caption=tblCap(tmp.caption), css.class="gmisc_table breakboth"))
+```

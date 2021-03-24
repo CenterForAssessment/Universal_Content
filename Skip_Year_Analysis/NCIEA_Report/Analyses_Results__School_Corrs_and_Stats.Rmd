@@ -1,0 +1,20 @@
+
+Table `r tblNum(1)` shows basic descriptive statistics for school level growth and prior achievement. Unlike SGPs at the individual level, when aggregating to the group level (e.g., school) the correlation between aggregate prior student achievement and aggregate growth is rarely zero. The correlation between prior student achievement and growth at the school level is compelling because it indicates whether students attending schools serving higher achieving students grow faster (on average) than those students attending schools serving lower achieving students. When using sequential-year data, school level results across states typically show a correlation between mean prior achievement and mean SGP between 0.1 and 0.3 (although higher numbers have been observed in some states). This indicates that, on average, students attending schools serving lower achieving students tend to demonstrate less exemplary growth than those attending schools serving higher achieving students. This relationship is a critical component to assessing the comparability between sequential and skip-year analysis results.
+
+Mean and standard deviations of the school mean SGPs (MSGPs) are provided for additional context and comparison. All statistics in Table `r tblNum(1)` are restricted to schools with at least `r params$min.school.size` students, and the measure of prior achievement used is the mean prior *standardized* scale score.
+
+
+```{r, results='asis', echo=FALSE, School_Lev_Stats}
+	stat_tbl <- data.table(Filter = c("All Students", rep("", length(params$GL_subjects)-1), "Skip-Year Subset", rep("", length(params$GL_subjects)-1)), rbindlist(list(sch_stat, sch_stat_x)))
+	stat_tbl[, N_Skip := NULL] # prettyNum(N_Skip, big.mark=',')]
+	stat_tbl[, N_Sequential := NULL] # prettyNum(N_Sequential, big.mark=',')]
+	stat_tbl[, CONTENT_AREA := sapply(CONTENT_AREA, capwords)]
+	setnames(stat_tbl, sapply(gsub("_Sequential|_Skip", "", names(stat_tbl)), capwords))
+
+	tmp.caption <- 'School level mean and standard deviation of MSGPs, and correlation of MSGPs with mean prior achievement'
+	knitr::knit_print(htmlTable::htmlTable(as.matrix(stat_tbl), title="",
+	  align=paste(rep('r', ncol(stat_tbl)), collapse=''),
+		n.rgroup = rep(length(params$GL_subjects), 2), rnames=FALSE,
+	  n.cgroup=c(2, 3, 3), cgroup=c("", "Sequential", "Skip Year"),
+	  caption=tblCap(tmp.caption), css.class="gmisc_table breakboth"))
+```

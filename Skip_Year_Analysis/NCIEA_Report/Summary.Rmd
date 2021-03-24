@@ -1,0 +1,21 @@
+#  Summary
+
+The analyses conducted in this report investigate whether skip-year SGPs can be used in place of the standard one-year SGPs. The report discussed four potential issues:
+
+- Are the students with skip-year SGPs systematically different than those with one-year SGPs?
+- Are the one-year SGPs systematically different than the skip-year SGPs at the individual level?
+- Are the one-year SGPs systematically different than the skip-year SGPs when aggregated to the school level?
+- Are the one-year SGPs systematically different than the skip-year SGPs for different demographic subgroups?
+
+\noindent No significant systematic differences were found for any of these questions. This is not to say there were not differences worth considering for a minority of students and schools. The results produced by these analyses do not disqualify the use of skip-year growth in lieu of one-year growth. However, they do not unequivocally qualify their use either. Since the results here are generated from historical data derived under "usual" educational circumstances and the current circumstances are far from usual, it is likely that spring 2021 skip-year data will exhibit greater deviations than what is reported here. Until confirmation is available that 2021 skip-year deviations are no larger than they were historically, it is not possible to assure the usability of skip-year growth for business-as-usual accountability.
+
+Beyond the technical characteristics of skip-year growth lie numerous practical and political considerations for its use in both state and federal accountability. As `r params$state.name` approaches 2021, any decisions related to student testing and accountability will require some technical consideration, but much more practical and political calculation to determine the best course of action going forward.
+
+Assuming testing does occur in some form in 2021, it is highly recommended that growth be calculated regardless of whether it is used for accountability. There are numerous, valuable inquiries that can be addressed with skip-year SGPs available including:
+
+- What was the overall impact on student learning in the state of `r params$state.name` due to COVID-19?
+- What demographic subgroups fared best and which demographic subgroups fared most poorly in terms of learning during the COVID-19 pandemic?
+- Are there COVID-19 related instructional approaches that led to greater student learning than others? If so, what were they and how much more
+learning were they associated with?
+
+\noindent Critical to the investigation of COVID-19 related learning loss will be accurate data on COVID-19 related education programs and student participation over time. Collecting these data would allow the `r params$state.org` to leverage student growth data and inform stakeholders about the impacts of the COVID-19 pandemic on student educational outcomes.

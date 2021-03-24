@@ -1,0 +1,91 @@
+### School mean SGP correlations
+
+```{r, results='asis', echo=FALSE}
+if (tolower(params$render.format) == "pagedown") {
+cat(
+"<aside class = 'info-callout'>
+
+<p class='info-callout-title'>Information call-out</p>
+
+[S]chools with high mean one-year SGPs predominantly have high mean skip-year SGPs and vice-versa.
+
+</aside>"
+)
+}
+```
+
+Like with individual results, correlations at the school level between one-year and skip-year mean SGPs are very high. Table `r tblNum(1)` reports the correlations (restricted to schools with `r params$min.school.size` or more students) which approach `r round(max(c(sch_cor$Skip_x_Sequential, sch_cor_x$Skip_x_Sequential)), 1)` based upon approximately `r n.schools` `r params$state.name` schools. The results demonstrate that schools with high mean one-year SGPs predominantly have high mean skip-year SGPs and vice-versa. Though not reported, similarly high correlations are observed within schools at the grade level, as well as at the district level.
+
+```{r fig.cap="Example of how to include tables for counter/caption similar to figures in pagedown template", out.width="0", out.height="0", out.extra='data-prefix="Table"', results="asis", echo=FALSE, eval=ifelse(tolower(params$render.format) == "pagedown", TRUE, FALSE)}
+
+	cor_tbl <- data.table(`Content Area` = params$GL_camel, `All Students` = sch_cor$Skip_x_Sequential, `Skip-Year Subset` = sch_cor_x$Skip_x_Sequential)
+
+	###  Include VERY small, transparent image to create table title and
+	knitr::include_graphics("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", dpi=NA, error = FALSE)
+
+	knitr::knit_print(htmlTable::htmlTable(as.matrix(cor_tbl), title="",
+	  align="rcc", # paste(rep('r', ncol(cor_tbl)), collapse='')
+	  caption=NULL, css.table="margin-top: -1.25em;margin-bottom: 1em;min-width: 75%;"))
+
+	#  Example of how to include table as a flextable image:
+	# table_file_name <- file.path("img", "school-lev-cors.png")
+	# invisible(cor_tbl %>%
+	#   flextable::flextable() %>%
+	#   flextable::theme_booktabs() %>%
+	#   flextable::fontsize(part = "all", size = 11) %>%
+	#   flextable::font(part = "all", fontname = "Lato") %>%
+	#   flextable::bold(part = "header", bold = TRUE) %>%
+	#   flextable::bold(part = "body", j = 1, bold = TRUE) %>%
+	#   flextable::align(part = "all", align = "right") %>%
+	#   flextable::save_as_image(file.path("..", "..", table_file_name)))
+
+	# knitr::include_graphics(file.path("assets", table_file_name), error = FALSE)
+```
+
+```{r, results="asis", echo=FALSE}
+	cor_tbl <- data.table(`Content Area` = params$GL_camel, `All Students` = sch_cor$Skip_x_Sequential, `Skip-Year Subset` = sch_cor_x$Skip_x_Sequential)
+
+	tmp.caption <- "School level correlations between mean SGPs with unfiltered and filtered students"
+	knitr::knit_print(htmlTable::htmlTable(as.matrix(cor_tbl), title="",
+	  align="rcc", # paste(rep('r', ncol(cor_tbl)), collapse='')
+	  caption=tblCap(tmp.caption)))
+```
+
+Figure \ref@(fig:sgpcomp) visualizes the relationship between school level MSGP and prior achievement by content area and student inclusion filter. Bubble sizes are representative of school size, and the black diagonal line represents perfect correlation (i.e. no difference).
+
+```{r, cache=TRUE, echo=FALSE, include=FALSE}
+  plot_data_gl <- rbindlist(list(sch_msgp[, Schools := "All Schools"], sch_msgp_x[, Schools := "Skip-Year Subset"]))
+  cor.sch <- plot_data_gl[!is.na(MEAN_SKIP_SGP), list( # COUNT_NO_SKIP_SGP >= params$min.school.size & COUNT_SKIP_SGP >= params$min.school.size & # now done for all sch_msgp/x
+		                           cors=round(cor(MEAN_NO_SKIP_SGP, MEAN_SKIP_SGP, use="complete.obs"), 2)), keyby=c("CONTENT_AREA", "Schools")]
+
+   p <- ggplot() + facet_grid(CONTENT_AREA ~ Schools) + coord_fixed(xlim=c(0,100), ylim=c(0, 100)) +
+							   	 theme(axis.title.x=element_text(size=15), axis.title.y=element_text(size=15),
+   								 			 axis.text.x=element_text(size=12), axis.text.y=element_text(size=12))
+
+   p <- p + geom_point(data = plot_data_gl[COUNT_NO_SKIP_SGP >= params$min.school.size & COUNT_SKIP_SGP >= params$min.school.size],
+   										 aes(x = MEAN_SKIP_SGP, y = MEAN_NO_SKIP_SGP, size = COUNT_NO_SKIP_SGP), alpha = 0.25, colour="blue") +
+            scale_size_continuous(range = c(1,9))
+
+   p <- p + theme(legend.position = "none") #  Needed when N size used for bubbles
+   p <- p + scale_x_continuous(name="School Mean SGP with Skip Year")
+   p <- p + scale_y_continuous(name="School Mean SGP Sequential Year")
+   p <- p + geom_text(data=cor.sch, aes(label=paste("r = ", cors, sep="")), x = 75, y = 25, size = 4.0, colour = "red")
+   p <- p + geom_abline(slope=1, intercept = 0)
+
+   ggsave(filename = file.path(params$base.directory, "assets", "img", "Skip_Year_SGP_Comp_SGP.svg"), plot=p, device = "svg", width = 7.5, height = 6, units = "in")
+```
+
+<!-- r, results="asis", echo=FALSE -->
+```{r, sgpcomp, fig.cap = "Sequential- and skip-year mean SGP by content area and student filter", out.width="100%", fig.align='center', fig.topcaption=TRUE, out.extra='data-prefix="Figure"', results="asis", echo=FALSE}
+
+	if (tolower(params$render.format) == "bookdown") {
+		# tmp.fig.caption <- "Sequential- and skip-year mean SGP by content area and student filter"
+		tmp.fig.caption <- knitr::opts_current$get("fig.cap")
+		cat(gsub("</p>\n", "</div>", gsub("<p>", "<div class='caption'>", markdown::markdownToHTML(text=Gmisc::figCapNo(tmp.fig.caption), fragment.only=TRUE))))
+	}
+	knitr::include_graphics(file.path(params$asset.directory, "img", "Skip_Year_SGP_Comp_SGP.svg"), error = FALSE)
+
+	# placeFigure(
+	# 	files = file.path("assets", "img", "Skip_Year_SGP_Comp_SGP.svg"), html.width = "100%",
+	# 	caption = "Sequential- and skip-year mean SGP by content area and student filter")
+```

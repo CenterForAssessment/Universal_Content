@@ -1,0 +1,33 @@
+<!--        3.3.1  Demographic Results - Economic Disadvantaged (FRL) -->
+```{r, cache=FALSE, echo=FALSE}
+  # demog.group <- as.list(unlist(params[["demographic"]][["value"]][["economic_status"]])) # doesn't work with params...
+  demog.group <- list(
+    name = "Economically Disadvantaged Students",
+    label = "FRL",
+    variable = "FREE_REDUCED_LUNCH_STATUS",
+    school.variable = "PERCENT_FRL")
+
+  demog.group[["description"]] <- "eligible for free/reduced lunch, or FRL"
+	demog.group[["count.comment"]] <- "As the results show, there is not a considerable difference between the two groups' growth calculation rates under either analysis."
+```
+```{r AR_Demog_Results_2a, child = file.path(child.within.child.path, "Analyses_Results__Demographic_Subgroup_1_Counts.Rmd"), eval=TRUE}
+```
+
+```{r, cache=FALSE, echo=FALSE}
+	demog.group[["student.stat.comment"]] <- "The results show there is not a considerable difference *within* the two groups' growth under either analysis.  The two growth measures are highly correlated and have similar distributional qualities within each group by content area.  However, it is important to note the growth gap *between* the FRL/non-FRL groups in both ELA and Mathematics.  This gap is approximately 7-10 points, on average, for FRL students for the sequential SGP estimates, and increases to roughly 11-15 points using the skip-year estimates."
+```
+```{r AR_Demog_Results_2b, child = file.path(child.within.child.path, "Analyses_Results__Demographic_Subgroup_2_Student_Corrs_Stats.Rmd"), eval=TRUE}
+```
+
+<!--             3.3.1  Schools -->
+```{r, cache=FALSE, echo=FALSE}
+  demog.group[["school.cor.comment"]] <- "The results show a negative relationship (correlation) between typical school growth and the school percentage of FRL students. That is, the schools with larger FRL populations tend to demonstrate lower academic growth."
+```
+```{r AR_Demog_Results_2c, child = file.path(child.within.child.path, "Analyses_Results__Demographic_Subgroup_3_School_Corrs_Stats.Rmd"), eval=TRUE}
+```
+
+```{r, cache=FALSE, echo=FALSE}
+	demog.group[["school.diff.comment"]] <- "This plot shows a slight negative relationship between the MSGP difference and FRL population size. This suggests that, on average, schools with higher FRL populations have lower difference values (i.e. schools with larger FRL populations may be slightly more likely to be negatively impacted with the use of skip-year analysis)."
+```
+```{r AR_Demog_Results_2d, child = file.path(child.within.child.path, "Analyses_Results__Demographic_Subgroup_4_Diffs.Rmd"), eval=TRUE}
+```

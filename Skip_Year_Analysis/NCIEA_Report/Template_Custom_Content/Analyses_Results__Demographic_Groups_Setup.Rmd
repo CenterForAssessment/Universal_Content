@@ -1,0 +1,26 @@
+
+<!--     3.3  Demographic Group Results  -->
+```{r, cache=FALSE, echo=FALSE, include=FALSE}
+  ###   Any necessary state-specific data formatting and variable creation - DON'T CACHE!!!
+
+  ##  Calculate School Demographic percentages if not already done
+	Report_Data[, PCT_SCHOOL_FRL := percent_demog(FREE_REDUCED_LUNCH_STATUS), by = c("YEAR", "CONTENT_AREA", "GRADE", "SCHOOL_NUMBER")]
+	Report_Data[, PCT_SCHOOL_ELL := percent_demog(ELL_STATUS), by = c("YEAR", "CONTENT_AREA", "GRADE", "SCHOOL_NUMBER")]
+  Report_Data[, PCT_SCHOOL_SWD := percent_demog(IEP_STATUS), by = c("YEAR", "CONTENT_AREA", "GRADE", "SCHOOL_NUMBER")]
+```
+
+```{r, cache=FALSE, echo=FALSE}
+  ##  Demographic percentage chunk to evaluate in creation of sch_demog_msgp summary table (see Analyses_Results__Demographic_Groups_Intro_and_Calcs.Rmd)
+  ##  Assumes the "PCT_SCHOOL_*" convention
+
+  vars.to.get <- grep("PCT_SCHOOL_", names(Report_Data), value=TRUE)
+  smry_eval_expression <- paste0(sub("PCT_SCHOOL_", "PERCENT_", vars.to.get), " = ", vars.to.get, "[1]")
+
+  demog.group.count <- 3
+  demog.group.description <-
+    "economically disadvantaged students (as indicated by free/reduced-price lunch eligibility status), English language learners, and students with disabilities (as indicated by having an individualized education program - IEP)."
+
+	if (tolower(params$render.format) == "bookdown") {
+		child.within.child.path <- params$unvrsl.rmd.path
+	} else child.within.child.path <- file.path("..", "..", "..", params$unvrsl.rmd.path)
+```
