@@ -1,0 +1,24 @@
+
+```{r, cache=TRUE, echo=FALSE, include=FALSE, Student_Growth}
+###  Create summaries of SGPs here...
+
+  stu_msgp <- Report_Data[VALID_CASE=='VALID_CASE' & eval(parse(text = params$grd.subset)), list(
+                    MEAN_BASELINE_SGP = round(mean(eval(parse(text = params$baseline.sgp)), na.rm = TRUE), 1),
+                    MEAN_COHORT_SGP = round(mean(eval(parse(text = params$cohort.sgp)), na.rm = TRUE), 1)),
+                  keyby = c("CONTENT_AREA", "GRADE", "YEAR")]
+
+  if (any(as.numeric(params$grades)>9)) {
+    stu_msgp[, GRADE := as.numeric(GRADE)]
+    setkey(stu_msgp, CONTENT_AREA, GRADE)
+  }
+  stu_msgp$CONTENT_AREA <- sapply(stu_msgp$CONTENT_AREA, capwords, USE.NAMES=FALSE)
+  stu_msgp$CONTENT_AREA[duplicated(stu_msgp$CONTENT_AREA)] <- ""
+
+  row.names(stu_msgp) <- NULL
+  setnames(stu_msgp, sapply(names(stu_msgp), capwords, USE.NAMES=FALSE))
+  stu_msgp <- as.matrix(stu_msgp)
+
+  tmp.css.cell <- matrix(nrow=nrow(stu_msgp), ncol=ncol(stu_msgp))
+  tmp.css.cell[which(1:nrow(stu_msgp) %% 2 == 0),2:ncol(stu_msgp)] <- "border-bottom: 1px solid grey;"
+  stu_msgp <- htmlTable::addHtmlTableStyle(stu_msgp, css.cell=tmp.css.cell, css.tspanner.sep = "border-top: 2px solid grey;")            
+```

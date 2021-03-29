@@ -1,5 +1,5 @@
 #####
-###   Set up the Demonstration Skip Year Analysis Report directory
+###   Set up the Demonstration Learning Loss Analysis Report directory
 ###   Copy Literasee package assets, custom content templates, update packages
 ###   and create/customize/complete the required YAML and RMD file config lists
 #####
@@ -19,7 +19,7 @@ require(Literasee)
 ###   An initial setup will include copying the Literasee package assets and
 ###   any custom RMD templates (from "Universal_Content" or another, similar, state)
 
-template.path <- file.path("..", "..", "..", "Universal_Content", "Skip_Year_Analysis", "NCIEA_Report", "Template_Custom_Content")
+template.path <- file.path("..", "..", "..", "Universal_Content", "Learning_Loss_Analysis", "Child_RMD", "Template_Custom_Content")
 setupReportDirectory(custom.content.path = template.path)
 
 ###   It may be necessary to occasionally update Literasee package assets.
@@ -38,27 +38,27 @@ setupReportDirectory(custom.content.path = template.path)
 
 custom.config <- list(
   client.info = list(
-    state.name="Demonstration", # required at a minimum
+    state.name="Demonstration COVID", # required at a minimum
     # state.abv = "DEMO", # Added manually in Report_Configs.R -- need to fix getStateAbbreviation for DEMO/DEMO_COVID!
     city.name = "Washington",
     organization = "Demonstration Department of Education",
     org.head = "Joseph R. Biden, Jr.",
-    github.repo = "CenterForAssessment/SGP_Research/tree/master/Demonstration/Skip_Year_Analysis",
-    acknowledgements="the entire staff of the DDoE Assessment and Accountability office, and particularly Marie Q. Public,"
+    github.repo = "CenterForAssessment/SGP_Research/tree/master/Demonstration/Learning_Loss_Analysis",
+    acknowledgements="the entire staff of the DDoE Assessment and Accountability Office, and particularly Maggie Q. Public,"
   ),
   # Override defaults for author/Affil
   top.level=list(             # Title/subtitle, author.names, author.affil, date
-    author.names = c("Damian W. Betebenner", "Adam R. VanIwaarden", "Nathan Dadey"),
-    author.affil = c("Center for Assessment", "Gun 4 Hire", "Center for Assessment")
+    title = "Example Academic Impact Analysis",
+    subtitle = "Student Achievement and Growth during the COVID-19 Pandemic"
   )
 )
 
 ##   The following script will merge the report.config (universal) and custom.config lists and return 'report.config' to be used in next steps
-source(file.path("..", "..", "..", "Universal_Content", "Skip_Year_Analysis", "R_Scripts", "Report_Configs.R"))
+source(file.path("..", "..", "..", "Universal_Content", "Learning_Loss_Analysis", "Meta_Data", "Report_Configs.R"))
 
 ##   The following script will merge the rmd.files (universal) and custom.files lists and return 'rmd.files' to be used in next steps
 # custom.files <- list(...) # override defaults if desired.  Otherwise a message that universal list will be used.
-source(file.path("..", "..", "..", "Universal_Content", "Skip_Year_Analysis", "R_Scripts", "Report_Content.R"))
+source(file.path("..", "..", "..", "Universal_Content", "Learning_Loss_Analysis", "Meta_Data", "Report_Content.R"))
 
 ###   Save report YAML and file configurations
 save(list=c("report.config", "rmd.files"), file = "Report_Configuration_MetaData.rda")

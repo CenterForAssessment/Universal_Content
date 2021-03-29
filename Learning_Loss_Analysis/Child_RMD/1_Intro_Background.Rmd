@@ -1,0 +1,93 @@
+## Background
+
+The COVID-19 pandemic has led to unprecedented changes in the way we live our lives in the United
+States, including the ways in which we educate our students. Beginning in spring 2020, the
+education of students was dramatically interrupted due to the pandemic. Even now in spring
+2021 the majority of students in the United States continue to experience substantial impacts to
+their education.
+
+This report is part of the due diligence being conducted by the `r params$state.org`
+(`r params$state.org.abv`) to quantify the academic impact students in `r params$state.name`
+have experienced over the year-long course of the pandemic.
+
+Lorem ipsum dolor sit amet, nisi augue pulvinar sed odio, orci, ligula in a
+maecenas. Nullam pellentesque est sed aliquam lacus sagittis, non senectus montes,
+natoque. Nunc phasellus donec turpis pharetra urna. Cum, ultricies sed in lacus
+pretium suspendissesed sed, lacinia. Porttitor id sociosqu donec potenti leo
+lectus magnis taciti, pharetra lectus. Pulvinar ut et sociis non nunc, odio. Odio,
+mauris volutpat in.
+
+Figure `r figNum(1)` illustrates how learning loss might be measured by interim
+assessments taken at multiple points in an academic year. In this sentence we use
+the `figNum` function to get the figure number of the next figure.  Since it has
+not been placed in the report yet, we need to advance the counter by one - `figNum(1)`.
+
+```{r, fig.cap = "Example image placement: learning loss interim assessment illustration", out.width="100%", fig.align='center', fig.topcaption=TRUE, out.extra='data-prefix="Figure"', results="asis", echo=FALSE}
+
+	if (tolower(params$render.format) == "bookdown") {
+		tmp.fig.caption <- knitr::opts_current$get("fig.cap")
+		cat(gsub("</p>\n", "</div>", gsub("<p>", "<div class='caption'>", markdown::markdownToHTML(text=Gmisc::figCapNo(tmp.fig.caption), fragment.only=TRUE))))
+	}
+	knitr::include_graphics(file.path(params$asset.directory, "images", "example_figure_1.png"), error = FALSE)
+```
+
+As `r figNum()` shows, there are multiple assessment time points during the year
+interim assessments.  This sentence shows how the `figNum` function works in more
+detail (the figure increment is 0 to get the last figure number.)
+
+Quam augue dictum nisl interdum quisque volutpat sapien.
+Egestas adipiscing vestibulum, egestas massa, fa ucibus. Suscipit tristique nec
+leo pretium vitae amet nam, ornare dui. Arcu elit ullamcorper ullamcorper nec vel.
+In penatibus eget a non mi ac nisi. Aliquet ultrices molestie donec litora ac.
+Mus magnis vitae cursus tellus amet tempor himenaeos. Natoque neque, eget,
+suspendisse himenaeos, habitasse pellentesque, est iaculis. Augue torquent rutrum
+sit non nec pretium eget. Turpis parturient ligula natoque facilisi a dignissim
+ipsum.
+
+Figure `r figNum(1)` illustrates how learning loss might be measured by annual
+state summative assessments taken at the end of an academic year.
+
+```{r, fig.cap = "Example learning loss illustration with a summative state assessment", out.width="100%", fig.align='center', fig.topcaption=TRUE, out.extra='data-prefix="Figure"', results="asis", echo=FALSE}
+
+	if (tolower(params$render.format) == "bookdown") {
+		tmp.fig.caption <- knitr::opts_current$get("fig.cap")
+		cat(gsub("</p>\n", "</div>", gsub("<p>", "<div class='caption'>", markdown::markdownToHTML(text=Gmisc::figCapNo(tmp.fig.caption), fragment.only=TRUE))))
+	}
+	knitr::include_graphics(file.path(params$asset.directory, "images", "example_figure_2.png"), error = FALSE)
+```
+
+Arcu dolor at nullam sed torquent tellus non. Cubilia eget in nisi, penatibus
+aenean congue lorem et ornare tristique leo facilisi orci vel. Non varius vestibulum
+nam morbi pe llentesque sit. Vitae in eget eu sed elit, et ad lacus, eleifend
+nisl, potenti eget egestas. Eros eu porttitor, tristique fames, et pellentesque
+lacinia et. Porttitor in etiam ac nec montes. Ante finibus purus neque ante et.
+Et amet suspendisse potenti at bibendum vivamus bibendum sapien. Eget egestas
+pharetra metus phasellus volutpat non donec sed id.
+
+- Varius, eros, mattis vulputate fringilla dis felis eros. Felis, enim dolor
+vestibulum curabitur commodo ex nisi. Duis nostra, nibh condimentum urna curabitur
+interdum mauris, dui, ac.
+- Faucibus mus semper tortor justo ut ornare vel consectetur ipsum. Sed nunc vel,
+taciti, eu urna neque ut habitasse sed ipsum dis sed faucibus. Leo donec vel,
+varius ac tortor at. Etiam leo egestas maecenas purus eros ultrices iaculis.
+- Tempus imperdiet dis sed nunc ut. Sed sit convallis lacus neque habitant id id
+posuere nostra. Ligula convallis nec vitae. Eget himenaeos sit purus sed mauris
+pellentesque lorem sollicitudin nisl.
+- Dolor amet et dictum ad elementum, sed, sed nibh turpis. Nunc id cubilia dolor
+mauris, vestibulum nulla odio venenatis leo dignissim. Eu egestas semper porttitor.
+
+Sed suspendisse, quis erat erat nec tellus ut scelerisque. Amet vel nisi ut sed
+maximus eget vestibulum. Sapien mauris ante ac ut erat faucibus faucibus. Ornare,
+mattis in dictumst sodales mattis ex senectus per. Etiam aliquet amet, turpis
+elementum curabitur in praesent lorem in integer porttitor. Non, volutpat sapien
+vel a ut eu? Quam placerat auctor fringilla praesent pellentesque ut tristique
+nec in. Enim bibendum, quis urna egestas felis id bibendum. Sit vel, lorem, cursus
+hac sit ac feugiat libero. Aliquam quis in, libero vehicula, consequat sed.
+
+Nec fusce faucibus donec sed aenean aliquet? Ullamcorper mauris eu et ut luctus
+ac et. Sed nisl nibh turpis sed tempor tempor, tortor. A egestas scelerisque
+egestas mollis ut eu vivamus amet laoreet. Primis quisque! Posuere magnis litora,
+pellentesque lorem in. A eget eget, non, malesuada in tempor non. Nunc ut sit
+montes ligula cras hendrerit augue. Aliquam facilisis urna velit iaculis egestas.
+Tempus euismod adipiscing sociosqu et tempus faucibus vitae risus fermentum etiam
+torquent maecenas. Suspendisse amet ultrices maximus, enim eros dolor.

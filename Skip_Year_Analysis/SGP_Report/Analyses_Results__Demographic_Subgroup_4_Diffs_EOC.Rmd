@@ -1,0 +1,30 @@
+
+Figure `r getCounter("figure")+1` provides the same visualization of the relationship between school level MSGP differences and school `r demog.group$label` population size by EOC subject for all students.
+
+`r if(!is.null(demog.group$school.diff.comment.eoc)) {demog.group$school.diff.comment.eoc}`
+
+
+```{r, echo=FALSE, include=FALSE}
+   p <- ggplot() + facet_wrap(~ CONTENT_AREA, ncol=2) +
+							   	 theme(axis.title.x=element_text(size=15), axis.title.y=element_text(size=15),
+   								 			 axis.text.x=element_text(size=12), axis.text.y=element_text(size=12))
+
+   p <- p + geom_point(data = demog_plot_data_eoc[!is.na(eval(parse(text = demog.group$school.variable)))],
+   										aes(x = eval(parse(text = demog.group$school.variable)), y = Mean_Difference, size = COUNT_NO_SKIP_SGP), alpha = 0.25, colour="blue") +
+            scale_size_continuous(range = c(1, 9))
+   p <- p + geom_smooth(data = demog_plot_data_eoc[!is.na(eval(parse(text = demog.group$school.variable)))],
+   										 aes(x = eval(parse(text = demog.group$school.variable)), y = Mean_Difference), method = "loess", se=FALSE, colour="black")
+   p <- p + geom_text(data=cor_demog_eoc, aes(label=paste("r = ", eval(parse(text = paste0("cors_", tolower(demog.group$label)))), sep="")), x = 12, y = -15.5, size = 4.0, colour = "red")
+
+   p <- p + theme(legend.position = "none") #  Needed when N size used for bubbles
+   p <- p + scale_x_continuous(name=paste("School Percent", demog.group$label))
+   p <- p + scale_y_continuous(name="School Mean SGP Differences")
+
+   plot.file <- file.path(params$working.directory, "assets", "img", paste0("Skip_Year_SGP_Comp_SGP_x_", demog.group$label, "_EOC.pdf"))
+	 ggsave(filename = plot.file, plot=p, device = "pdf", width = 7.5, height = 7, units = "in")
+```
+
+```{r, results="asis", echo=FALSE}
+	placeFigure(files = plot.file,
+			        caption = paste("Mean SGP difference by percent", demog.group$label, "by EOC subject"))
+```

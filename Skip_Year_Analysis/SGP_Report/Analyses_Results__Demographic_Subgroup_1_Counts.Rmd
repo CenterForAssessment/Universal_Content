@@ -1,0 +1,43 @@
+
+### `r demog.group$name`
+
+Table `r tblNum(1)` provides the frequencies and proportions of students that had a sequential and/or skip-year SGP calculated in 2019, disaggregated by those identified as `r sub("english", "English", tolower(demog.group$name))` (`r if( !is.null(demog.group$description) ) demog.group$description else demog.group$label`), or not, and content area. `r if(!is.null(demog.group$count.comment)) {demog.group$count.comment} `
+
+
+```{r, echo=FALSE, include=FALSE}
+###   Calculate Indiv/Group level values
+	demog_smry <- Report_Data[VALID_CASE=="VALID_CASE" & eval(parse(text = params$skip.subset)) & !is.na(eval(parse(text = demog.group$variable))), list(
+                  SGP_Correlation = round(cor(eval(parse(text = params$seq.sgp)), eval(parse(text = params$skip.sgp)), use="pairwise.complete"), 2),
+									Mean_Sequential = round(mean(eval(parse(text = params$seq.sgp)), na.rm = TRUE), 1),
+									SD_Sequential = round(sd(eval(parse(text = params$seq.sgp)), na.rm = TRUE), 1),
+									Mean_Skip = round(mean(eval(parse(text = params$skip.sgp)), na.rm = TRUE), 1),
+									SD_Skip = round(sd(eval(parse(text = params$skip.sgp)), na.rm = TRUE), 1),
+									Total_Students = .N,
+									Sequential_Count = sum(!is.na(eval(parse(text = params$seq.sgp)))),
+									Skip_Count = sum(!is.na(eval(parse(text = params$skip.sgp))))), keyby = c("CONTENT_AREA", demog.group$variable)]# Exploratory with GRADE: keyby = c("CONTENT_AREA", "GRADE" ...
+	demog_smry[, Difference := Skip_Count - Sequential_Count]
+	demog_smry[, Pct_Sequential := round((Sequential_Count/Total_Students)*100, 1)]
+	demog_smry[, Pct_Skip := round((Skip_Count/Total_Students)*100, 1)]
+	demog_smry[, Difference_Pct := Pct_Skip - Pct_Sequential]
+	row.names(demog_smry) <- NULL #  Needed to add this - cache .rdb kept getting corrupt and couldn't rerun...
+```
+
+```{r, results='asis', echo=FALSE}
+	demog_counts <- demog_smry[, c(1:2, 8:10, 12:13)][order(match(CONTENT_AREA, params$subject_order))] # Percentages receiving SGPs  # For exploratory with GRADE: c(1:3, 9:11, 13:14)
+	demog_counts[, CONTENT_AREA := sapply(CONTENT_AREA, capwords, USE.NAMES=FALSE)]
+	demog_counts[duplicated(CONTENT_AREA), CONTENT_AREA := ""]
+	demog_counts[, Total_Students := prettyNum(Total_Students, preserve.width = "individual", big.mark=",")]
+	demog_counts[, Sequential_Count := prettyNum(Sequential_Count, preserve.width = "individual", big.mark=",")]
+	demog_counts[, Skip_Count := prettyNum(Skip_Count, preserve.width = "individual", big.mark=",")]
+	demog_counts[, demog.group$variable := gsub(".*: ", "", eval(parse(text = demog.group$variable)))]
+
+	setcolorder(demog_counts, c(1:4, 6, 5, 7)) # For exploratory with GRADE: c(1:5, 7, 6, 8)
+
+	row.names(demog_counts) <- NULL
+	setnames(demog_counts, c("Content Area", paste(demog.group$label, "Status"), "Total Students", "Count", "Percent", "Count", "Percent"))
+
+	cat(dualTable(as.matrix(demog_counts),
+  	align=paste(rep("r", ncol(demog_counts)), collapse=""),
+		n.rgroup = rep(2, nrow(demog_counts)/2), n.cgroup=c(3, 2, 2), cgroup=c("", "Sequential", "Skip Year"),
+		caption= paste("Sequential and skip-year SGP counts and percentages by content area and",  demog.group$label, "status"))) # , files = tbl.file
+```

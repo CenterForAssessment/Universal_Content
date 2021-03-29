@@ -1,0 +1,33 @@
+PRM__draft.text__PRM
+
+The COVID-19 pandemic is having far-reaching effects on all facets of our lives. The impact on education included school closures in Spring 2020 and a 2020-2021 academic school year mixing remote and in-person instruction that is looking quite different from pre-pandemic times. PRM__state.name__PRM, like all states, is currently grappling with evaluating the academic impact the pandemic has had, as well as how to make efficient, targeted use of resources to resources to ameliorate learning loss.
+
+This report summarizes achievement (status) and growth analyses. To pursue this investigation, historical TXT__test.name.abv__TXT data in PRM__GL_text__PRM was used to establish "fair" achievement comparisons and to derive baseline student growth percentiles (i.e., describing 2021 growth relative to 2019 norms).
+
+
+Lorem ipsum dolor sit amet, in eu augue lacinia sed rutrum ac et. Fusce et nam
+felis eros arcu a sem. Eros elementum sollicitudin non, phasellus id mus. Mauris
+ex ac felis egestas sed aenean, in quam quis amet. Ac, sed hac fames placerat
+massa convallis facilisi. Senectus lao reet libero ut ligula neque fringilla.
+Consectetur elit eleifend, commodo purus.
+
+Sociosqu, aptent accumsan per turpis ullamcorper sed ultricies aenean id quis per.
+Nec et, phasellus montes tincidunt dui dignissim facili sis libero nascetur.
+Euismod eu nunc at ridiculus magna donec cubilia, bibendum vel. Eleifend praesent
+himenaeos a pulvinar efficitur dui. At massa duis felis justo volutpat eget cubilia.
+Ut ex pulvinar accumsan. Maecenas aptent suspendisse tortor varius ligula orci.
+Eget risus inceptos nisi auctor donec nisl ligula. Pharetra molestie penatibus
+aenean nisl, nisi. In posuere in vel sodales imperdiet duis amet et sit. Vel vel
+quam ac rhoncus suspendisse. Magnis, cursus erat dignissim faucibus, vitae varius
+vehicula pellentesque. Torquent sociosqu at odio maecenas pulvinar ac praesent
+non. Commodo consequat ut ipsum sem est eget sed nisi at cubilia velit per.
+
+Torquent vulputate eget ligula pretium cursus nibh mauris, nisl euismod vitae sem
+volutpat. Auctor lectus. Sed scelerisque pellentesque, ut sit elit. Pellentesque
+aenean non ullamcorper ut, risus, morbi. Mollis metus neque velit nec sed inceptos
+nullam. Mollis duis venenatis massa posuere in dui maximus in diam. Parturient
+ex in risus porta rhoncus at leo id ut in. Blandit taciti quis est mollis quam
+condimentum ac sed risus conubia urna et pellentesque. Ac tellus ultricies erat
+magna eleifend nisi sed dolor in. Maecenas potenti at non et? Non fusce tellus
+cubilia luctus velit. Enim purus, ligula, ante ac. Porta dui dapibus consectetur
+et maximus purus consectetur ante egestas mattis.

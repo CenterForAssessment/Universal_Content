@@ -1,0 +1,100 @@
+## School Level Results
+
+```{r, echo=FALSE, include=FALSE}
+###  Conditional text for next section
+	if (!is.null(params$seq.grades.list)) {  #  text_1
+		text_1 <- sapply(names(params$seq.grades.list)[which(sapply(sapply(params$seq.grades.list, as.numeric), min) %in% min(as.numeric(params$seq.grades)))], capwords)
+		if (length(head(text_1, -1)) > 0) text_1 <- paste(paste(head(text_1, -1), collapse=", "), tail(text_1, 1), sep=" and ")
+		text_1 <- paste("in", text_1)
+	} else text_1 <- ""
+	if (!is.null(params$skip.grades.list)) {  #  text_2
+		if (any(no.elem <- sapply(sapply(params$skip.grades.list, as.numeric), min) > 5)) {
+			text_2 <- sapply(names(params$skip.grades.list)[no.elem], capwords)
+			if (length(head(text_2, -1)) > 0) text_2 <- paste(paste(head(text_2, -1), collapse=", "), tail(text_2, 1), sep=" and ")
+			text_2 <- paste("Growth for", text_2, "would be missing entirely for most (traditional) elementary schools. ")
+		}
+	} else text_2 <- ""
+	if (!is.null(params$skip.grades.list)) {  #  k5.skip, k6.skip, excluded.grade.text & skip.excluded.graders
+		k5.skip <- roundUp((sum(unlist(sapply(sapply(params$skip.grades.list, as.numeric), `<=`, 5)))/sum(unlist(sapply(sapply(params$seq.grades.list, as.numeric), `<=`, 5))))*100, 5)
+		k6.skip <- roundUp((sum(unlist(sapply(sapply(params$skip.grades.list, as.numeric), `<=`, 6)))/sum(unlist(sapply(sapply(params$seq.grades.list, as.numeric), `<=`, 6))))*100, 5)
+		excluded.grade.text <- "certain grade level and content area"
+		skip.excluded.graders <- gsub("grade", "graders in", skip.excluded.grade) # skip.excluded.grade from Data_2_counts_table.Rmd
+	} else {
+		k5.skip <- roundUp((sum(params$skip.grades <= 5)/sum(params$seq.grades <= 5))*100, 5)
+		k6.skip <- roundUp((sum(params$skip.grades <= 6)/sum(params$seq.grades <= 6))*100, 5)		
+		excluded.grade.text <- skip.excluded.grade
+		skip.excluded.graders <- gsub("grade", "graders", skip.excluded.grade) # skip.excluded.grade from Data_2_counts_table.Rmd
+	}
+	# roundUp((sum(5:8 <= 5)/sum(4:8 <= 5))*100, 5) # half
+	# roundUp((sum(5:8 <= 6)/sum(4:8 <= 6))*100, 5)	# ~ a third
+```
+
+Of most interest to states for reporting and accountability purposes is how well skip-year growth and one-year growth compare when aggregated to the school level. Aggregating SGPs is usually accomplished by taking the median or mean of the SGPs for the students attending a school for a given year and content area. One critical difference of skip-year growth from one-year growth is the absence of SGPs for `r skip.excluded.grade` students. `r if (min(as.numeric(params$skip.grades)) <= 5) {paste("A school serving",  ord(min(as.numeric(params$seq.grades))), "graders would have growth", text_1, "for those students when using one-year growth but not with skip-year growth.")}` `r text_2` Elementary schools comprising grades K-5 or K-6 would have less than `r k5.skip`-`r k6.skip`% of the total student growth measures that they would have had with one-year growth when using skip-year growth.
+
+Although the *total* impact on school growth is important in determining the best path forward for the state's accountability decisions, including `r excluded.grade.text` growth in *only* one-year analyses leads to additional school level disparities beyond those resulting from the use of different analytic methods. The results are thus summarized in two ways:
+
+1. Aggregates were calculated using all available skip-year and one-year growth scores.
+2. Aggregates were calculated including only grades/content areas for which *both* skip-year and one-year growth could be calculated.
+
+\noindent The first method includes all available growth scores (either skip-year or one-year) and calculates the mean and standard deviation from those. This method includes `r skip.excluded.grade` one-year SGPs for schools but those same schools would not have skip-year growth for those students. The second method filters students to only those in grades/content areas in which growth could be calculated in both analyses. This method omits `r skip.excluded.graders` since they do not have a skip-year SGP.
+
+
+```{r, cache=TRUE, echo=FALSE, include=FALSE, School_Lev_Values}
+##  Calculate School Level Values
+	sch_msgp <- Report_Data[VALID_CASE=='VALID_CASE' & !is.na(SCHOOL_NUMBER),
+  		            list(
+      			          MEAN_NO_SKIP_SGP = mean(eval(parse(text = params$seq.sgp)), na.rm = TRUE),
+            			    MEAN_SKIP_SGP = mean(eval(parse(text = params$skip.sgp)), na.rm = TRUE),
+			                MEAN_SCALE_SCORE_PRIOR_STANDARDIZED = mean(SCALE_SCORE_PRIOR_STANDARDIZED, na.rm=TRUE),
+      				        MEAN_NO_SKIP_SGP_SCALE_SCORE_PRIOR_STANDARDIZED = mean(NO_SKIP_SGP_SCALE_SCORE_PRIOR_STANDARDIZED, na.rm=TRUE),
+              			  COUNT_NO_SKIP_SGP = sum(!is.na(eval(parse(text = params$seq.sgp)))),
+			                COUNT_SKIP_SGP = sum(!is.na(eval(parse(text = params$skip.sgp)))),
+      			          COUNT_TOTAL = .N),
+            			  keyby = c("CONTENT_AREA", "SCHOOL_NUMBER")][,DIFFERENCE_SKIP_NO_SKIP_MEAN_SGP:=round(abs(MEAN_SKIP_SGP-MEAN_NO_SKIP_SGP), 2)]
+	sch_msgp <- sch_msgp[COUNT_NO_SKIP_SGP >= params$min.school.size & COUNT_SKIP_SGP >= params$min.school.size] # subset to min.school.size
+
+	sch_msgp_x <- Report_Data[VALID_CASE=='VALID_CASE' & !is.na(SCHOOL_NUMBER) & eval(parse(text = params$skip.subset)),
+  			            list(
+        				        MEAN_NO_SKIP_SGP = mean(eval(parse(text = params$seq.sgp)), na.rm = TRUE),
+                				MEAN_SKIP_SGP = mean(eval(parse(text = params$skip.sgp)), na.rm = TRUE),
+				                MEAN_SCALE_SCORE_PRIOR_STANDARDIZED = mean(SCALE_SCORE_PRIOR_STANDARDIZED, na.rm=TRUE),
+        				        MEAN_NO_SKIP_SGP_SCALE_SCORE_PRIOR_STANDARDIZED = mean(NO_SKIP_SGP_SCALE_SCORE_PRIOR_STANDARDIZED, na.rm=TRUE),
+                				COUNT_NO_SKIP_SGP = sum(!is.na(eval(parse(text = params$seq.sgp)))),
+				                COUNT_SKIP_SGP = sum(!is.na(eval(parse(text = params$skip.sgp)))),
+        				        COUNT_TOTAL = .N),
+              				keyby = c("CONTENT_AREA", "SCHOOL_NUMBER")][,DIFFERENCE_SKIP_NO_SKIP_MEAN_SGP:=round(abs(MEAN_SKIP_SGP-MEAN_NO_SKIP_SGP), 2)]
+	sch_msgp_x <- sch_msgp_x[COUNT_NO_SKIP_SGP >= params$min.school.size & COUNT_SKIP_SGP >= params$min.school.size] # subset to min.school.size
+
+##  Calculate School Level Summaries
+	sch_stat <- sch_msgp[, list(
+	    Mean_Sequential = round(mean(MEAN_NO_SKIP_SGP, na.rm=TRUE), 1),
+  	  SD_Sequential = round(sd(MEAN_NO_SKIP_SGP, na.rm=TRUE), 1),
+    	Corr_Sequential = round(cor(MEAN_NO_SKIP_SGP, MEAN_NO_SKIP_SGP_SCALE_SCORE_PRIOR_STANDARDIZED, use="complete.obs"), 2),
+    	N_Sequential = sum(!is.na(MEAN_NO_SKIP_SGP)),
+  	  Mean_Skip = round(mean(MEAN_SKIP_SGP, na.rm=TRUE), 1),
+	    SD_Skip = round(sd(MEAN_SKIP_SGP, na.rm=TRUE), 1),
+    	Corr_Skip = round(cor(MEAN_SKIP_SGP, MEAN_SCALE_SCORE_PRIOR_STANDARDIZED, use="complete.obs"), 2),
+  	  N_Skip = sum(!is.na(MEAN_SKIP_SGP))), keyby = c("CONTENT_AREA")]
+	sch_cor <- sch_msgp[, list(
+  	  Skip_x_Sequential = round(cor(MEAN_NO_SKIP_SGP, MEAN_SKIP_SGP, use="complete.obs"), 2), N = .N), keyby = c("CONTENT_AREA")]
+	sch_diff <- sch_msgp[, list(
+			`Median Difference` = round(median(DIFFERENCE_SKIP_NO_SKIP_MEAN_SGP, na.rm=TRUE), 2),
+			`95%ile Difference`=round(quantile(DIFFERENCE_SKIP_NO_SKIP_MEAN_SGP, probs=0.95, na.rm=TRUE), 2), N = .N), keyby = c("CONTENT_AREA")]
+
+	sch_stat_x <- sch_msgp_x[, list(
+  	  Mean_Sequential = round(mean(MEAN_NO_SKIP_SGP, na.rm=TRUE), 1),
+    	SD_Sequential = round(sd(MEAN_NO_SKIP_SGP, na.rm=TRUE), 1),
+	    Corr_Sequential = round(cor(MEAN_NO_SKIP_SGP, MEAN_NO_SKIP_SGP_SCALE_SCORE_PRIOR_STANDARDIZED, use="complete.obs"), 2),
+    	N_Sequential = sum(!is.na(MEAN_NO_SKIP_SGP)),
+  	  Mean_Skip = round(mean(MEAN_SKIP_SGP, na.rm=TRUE), 1),
+	    SD_Skip = round(sd(MEAN_SKIP_SGP, na.rm=TRUE), 1),
+    	Corr_Skip = round(cor(MEAN_SKIP_SGP, MEAN_SCALE_SCORE_PRIOR_STANDARDIZED, use="complete.obs"), 2),
+  	  N_Skip = sum(!is.na(MEAN_SKIP_SGP))), keyby = c("CONTENT_AREA")]
+	sch_cor_x <- sch_msgp_x[, list(
+  	  Skip_x_Sequential = round(cor(MEAN_NO_SKIP_SGP, MEAN_SKIP_SGP, use="complete.obs"), 2), N = .N), keyby = c("CONTENT_AREA")]
+	sch_diff_x <- sch_msgp_x[, list(
+			`Median Difference` = round(median(DIFFERENCE_SKIP_NO_SKIP_MEAN_SGP, na.rm=TRUE), 2),
+			`95%ile Difference`=round(quantile(DIFFERENCE_SKIP_NO_SKIP_MEAN_SGP, probs=0.95, na.rm=TRUE), 2), N = .N), keyby = c("CONTENT_AREA")]
+
+	n.schools <- prettyNum(roundUp(length(unique(sch_msgp$SCHOOL_NUMBER))), big.mark=',')
+```

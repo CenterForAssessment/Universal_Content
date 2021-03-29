@@ -1,0 +1,28 @@
+## Individual Level Results
+
+One-year (sequential) and skip-year SGPs quantify growth for students across different time spans. For sequential SGPs, the time span is a single year (possibly more depending on the availability of additional priors). For skip-year SGPs the time span is, at a minimum, two years. In general one would not communicate that a skip-year SGP is the same as a one-year SGP because they quantify something over a different time span.
+
+However, as the `r params$state.name` data analyses show, the two quantities are very similar. Correlations between one-year SGP and skip-year SGP shown in Table `r tblNum(1)` by content area and grade range from `r round(min(indiv_smry$SGP_Corr, na.rm=TRUE), 2)` to `r round(max(indiv_smry$SGP_Corr, na.rm=TRUE), 2)`. This indicates that although the quantities are for different time spans, students showing high or low growth across one of the time spans often showed a similar trend across the other time span.
+
+The mean and standard deviation of SGPs at the individual level is similar for both sets of calculations, as shown in Table `r tblNum(1)`. The table also provides the correlation between the current (2019) and most recent prior (2018 and 2017 respectively) scale scores used in the growth calculations. Good model fit begins with a strong positive relationship between prior and current achievement, which suggests that growth is detectable and modeling it is reasonable to begin with. Although a decrease in this correlation is expected over time, the relationship is still strong in the data used for the skip-year analysis. All results presented in Table `r tblNum(1)` are consistent with those found in all other states examined thus far.
+
+
+```{r, results='asis', echo=FALSE}
+	SGP_Corrs <- indiv_smry[GRADE %in% params$seq.grades, 1:9] # Means/SDs/Cors
+	if (any(as.numeric(params$seq.grades)>9)) {
+		SGP_Corrs[, GRADE := as.numeric(GRADE)]
+		setkey(SGP_Corrs, CONTENT_AREA, GRADE)
+	}
+	SGP_Corrs$CONTENT_AREA <- sapply(SGP_Corrs$CONTENT_AREA, capwords, USE.NAMES=FALSE)
+	SGP_Corrs$CONTENT_AREA[duplicated(SGP_Corrs$CONTENT_AREA)] <- ""
+
+	row.names(SGP_Corrs) <- NULL
+	setnames(SGP_Corrs, sapply(gsub("_Sequential|_Skip", "", names(SGP_Corrs)), capwords))
+
+	SGP_Corrs <- as.matrix(SGP_Corrs)
+	SGP_Corrs[which(is.na(SGP_Corrs))] <- ' -- -- '
+
+  cat(dualTable(SGP_Corrs,
+  	align="rrccccccc", n.cgroup=c(3, 3, 3), cgroup=c("", "Sequential", "Skip Year"),
+		caption='Sequential and skip-year SGP correlation, and SGP mean/standard deviation and test score correlations by content area and grade.'))
+```

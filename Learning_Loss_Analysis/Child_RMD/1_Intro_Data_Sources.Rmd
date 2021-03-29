@@ -1,0 +1,14 @@
+##  Data
+
+`r params$state.name` has extensive historical state summative assessment data from
+the [`r params$test.name[1]` (`r params$test.abv[1]`)](`r noquote(params$test.url[1])`)
+`r if(length(params$test.name) > 1) paste0("and [", params$test.name[2], " (", params$test.abv[2], ")](", params$test.url[2], ")")`
+in `r params$GL_text_long` for grades `r min(as.numeric(params$grades))-1` to
+`r max(as.numeric(params$grades))` `r if(!is.null(params$test.trans.year)) paste0("(transitioning from ", params$test.trans.name, " assessments in 2019)")`
+to evaluate student achievement and growth over the two-year gap in assessment
+data. `r ifelse(!is.null(params$additional.data.description), params$additional.data.description, "")`
+
+We calculated baseline growth for 2021 (using 2019 as the baseline year with
+`r paste(unique(c(SGP:::yearIncrement("2019", 1, 3), "2017")), collapse=" to ")`
+`r if(!is.null(params$test.trans.year)) paste(params$test.trans.name, "assessments")`
+as priors).

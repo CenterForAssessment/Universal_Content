@@ -1,0 +1,11 @@
+# Background
+
+The COVID-19 pandemic is having far-reaching effects on all facets of our lives. The impact on education included school closures in Spring 2020 and a 2020-2021 academic school year mixing remote and in-person instruction that is already looking quite different from pre-pandemic times. `r params$state.name`, like all states, is currently grappling with uncertainty regarding the summative spring assessments and accountability systems built from the results. Student academic growth is a significant component of `r params$state.name`'s accountability system and the lack of Spring 2020 results has necessitated an investigation into alternatives to the annual student academic growth calculations normally conducted.
+
+The most prominent alternative to the standard one-year (sequential) student academic growth SGP utilized by `r params$state.name` is to calculate a two-year (skip-year) student academic growth SGP from 2019 to 2021. The first question to such a proposal is, "Can you do that?" The answer is easy in one sense and not so easy in another.
+
+- In terms of performing the actual calculation, it is no more difficult to calculate skip-year growth than one-year growth. In fact, skip-year growth is often calculated in states where there is a gap in grade level testing (e.g., grade 8 to 10 growth when there is no grade 9 test) or where students take an end-of-course test and the most recent previous score is from two years prior. `r if(!is.null(params$existing.gap.description)) { params$existing.gap.description}`
+- Even though it is possible to calculate skip-year growth, it is not clear that it can be used in lieu of one-year growth for
+state accountability reporting.
+
+\noindent Due to the uncertainty of instruction, testing, and accountability in the coming year, the best that any state can do at this point in time is to examine historical data in anticipation of different situations that might arise in 2021. This report is part of the due diligence being conducted by the `r params$state.org` (`r params$state.org.abv`) in preparation for Spring 2021.

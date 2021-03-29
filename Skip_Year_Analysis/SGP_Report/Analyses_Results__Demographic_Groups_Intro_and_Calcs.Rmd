@@ -1,0 +1,59 @@
+##  Demographic Subgroup Results
+
+Issues around opportunity to learn can be investigated using growth gap comparisons for relevant demographic subgroups. The following subsections examine differences in the 2019 results for `r numbers2words(demog.group.count)` demographic groups: `r demog.group.description` All demographic summaries include only students who *could* have received a skip-year SGP (i.e. the "skip-year subset") unless otherwise indicated.
+
+Investigations of (differential) impact on student achievement and growth for already at-risk student populations will be critical to help ameliorate impacts of the disruption to education from the COVID-19 pandemic.
+
+```{r, cache=TRUE, echo=FALSE, include=FALSE, Demog_School_Summaries}
+###   Set up expression to evaluate summaries
+	if (!exists("smry_eval_expression")) {
+		vars.to.get <- grep("PCT_SCHOOL_", names(Report_Data), value=TRUE)
+		if (length(vars.to.get)==0) stop("Demographic group percentage variables need to be established externally first.")
+		smry_eval_expression <- paste0(sub("PCT_SCHOOL_", "PERCENT_", vars.to.get), " = ", vars.to.get, "[1]")
+	}
+
+	smry_eval_expression <- c(
+		paste0("MEAN_NO_SKIP_SGP = mean(", params$seq.sgp, ", na.rm=TRUE)"),
+		paste0("MEAN_SKIP_SGP = mean(", params$skip.sgp, ", na.rm=TRUE)"),
+		       "MEAN_SCALE_SCORE_PRIOR_STANDARDIZED = mean(SCALE_SCORE_PRIOR_STANDARDIZED, na.rm=TRUE)",
+		       "MEAN_NO_SKIP_SGP_SCALE_SCORE_PRIOR_STANDARDIZED = mean(NO_SKIP_SGP_SCALE_SCORE_PRIOR_STANDARDIZED, na.rm=TRUE)",
+		paste0("COUNT_NO_SKIP_SGP = sum(!is.na(", params$seq.sgp, "))"),
+		paste0("COUNT_SKIP_SGP = sum(!is.na(", params$skip.sgp, "))"),
+		       "COUNT_TOTAL = .N", smry_eval_expression)
+
+	smry_eval_expression <- setNames(smry_eval_expression, sub('^(.*) = .*', '\\1', smry_eval_expression))
+
+
+###   Calculate School Level Summary Values
+	sch_demog_msgp <- Report_Data[VALID_CASE=='VALID_CASE' & !is.na(SCHOOL_NUMBER),
+	              										lapply(smry_eval_expression, function(f) eval(parse(text=f))),
+																	keyby = c("CONTENT_AREA", "SCHOOL_NUMBER")] # by = .(CONTENT_AREA, SCHOOL_NUMBER)]
+	sch_demog_msgp <- sch_demog_msgp[COUNT_NO_SKIP_SGP >= params$min.school.size & COUNT_SKIP_SGP >= params$min.school.size]
+
+	sch_demog_msgp_x <- Report_Data[VALID_CASE=='VALID_CASE' & !is.na(SCHOOL_NUMBER) & eval(parse(text = params$skip.subset)),
+																		lapply(smry_eval_expression, function(f) eval(parse(text=f))),
+																	keyby = c("CONTENT_AREA", "SCHOOL_NUMBER")]
+	sch_demog_msgp_x <- sch_demog_msgp_x[COUNT_NO_SKIP_SGP >= params$min.school.size & COUNT_SKIP_SGP >= params$min.school.size]
+
+###   Create data set for plots
+	demog_plot_data_gl <- rbindlist(list(
+		sch_demog_msgp[CONTENT_AREA %in% params$GL_subjects][, Schools := "All Schools"],
+    sch_demog_msgp_x[CONTENT_AREA %in% params$GL_subjects][, Schools := "Skip-Year Subset"]))
+  demog_plot_data_gl[, Mean_Difference := round(MEAN_SKIP_SGP-MEAN_NO_SKIP_SGP, 2)] # NOT absolute
+
+	vars.to.get <- grep("PERCENT_", names(demog_plot_data_gl), value=TRUE)
+	corrs_eval_expression <- paste0("cors_", tolower(sub("PERCENT_", "", vars.to.get)), " = round(cor(Mean_Difference, ", vars.to.get, ", use='complete.obs'), 2)")
+	corrs_eval_expression <- setNames(corrs_eval_expression, sub('^(.*) = .*', '\\1', corrs_eval_expression))
+
+  cor_demog <- demog_plot_data_gl[!is.na(MEAN_SKIP_SGP),
+  																	lapply(corrs_eval_expression, function(f) eval(parse(text=f))), keyby=c("CONTENT_AREA", "Schools")]
+
+	##  EOC Subjects
+	if (!is.null(params$EOC_subjects)) {
+	  demog_plot_data_eoc <- sch_demog_msgp[CONTENT_AREA %in% params$EOC_subjects]
+	  demog_plot_data_eoc[, Mean_Difference := round(MEAN_SKIP_SGP-MEAN_NO_SKIP_SGP, 2)] # NOT absolute
+	  demog_plot_data_eoc[, CONTENT_AREA := factor(CONTENT_AREA, levels = params$EOC_subjects, labels = sapply(params$EOC_subjects, capwords))]
+	  cor_demog_eoc <- demog_plot_data_eoc[!is.na(MEAN_SKIP_SGP),
+	  																	lapply(corrs_eval_expression, function(f) eval(parse(text=f))), keyby="CONTENT_AREA"]
+	}
+```

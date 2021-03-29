@@ -1,0 +1,13 @@
+Table `r tblNum(1)` gives the same information as Table `r tblNum(0)` for all students in the EOC subjects. `r if(!is.null(demog.group$school.cor.comment.eoc)) {demog.group$school.cor.comment.eoc}`
+
+
+```{r, results='asis', echo=FALSE}
+###   Calculate School Level Demographic Group Summaries - EOC Subjects
+	cor_tbl_demog_eoc <- sch_demog_cor[CONTENT_AREA %in% params$EOC_subjects][order(match(CONTENT_AREA, params$EOC_subjects))]
+	cor_tbl_demog_eoc[, CONTENT_AREA := sapply(CONTENT_AREA, capwords)]
+	setnames(cor_tbl_demog_eoc, sapply(gsub("PCT_Demog_x_", "", names(cor_tbl_demog_eoc)), capwords))
+
+  cat(dualTable(as.matrix(cor_tbl_demog_eoc),
+  			align=paste(rep("r", ncol(cor_tbl_demog_eoc)), collapse=""),
+				caption=paste("School level EOC subject correlations between mean SGPs and percent",  demog.group$label)))
+```

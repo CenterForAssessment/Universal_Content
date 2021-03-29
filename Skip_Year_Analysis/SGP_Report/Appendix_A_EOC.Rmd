@@ -1,0 +1,179 @@
+
+##  End of course test subjects
+
+Each end of course (EOC) test subject is analyzed using more than one sequence of prior subjects, grades and years to account for variation in student test-taking histories. Of these various progressions, there is one designated as the "canonical" progression that identifies the most typical course path. These canonical progressions are used in other facets of the Student Growth Percentile methodology, such as making adequate growth determinations and growth-to-standard projections.
+
+For brevity, only the canonical progressions are displayed in this appendix. The full canonical projection is used for the sequential analyses. For the skip-year analyses, the most recent prior is not used but an additional year is added when available in a students test score history. A table is provided for each EOC subject subsection listing the canonical and additional (non-canonical) progressions that were calculated for both sequential and skip-year analyses.
+
+```{r, cache=FALSE, results="asis", echo=FALSE}
+	pageBreak()
+```
+
+```{r, cache=FALSE, echo=FALSE}
+	getPriors <- function(progression) {
+		tmp.priors <- sapply(strsplit(progression, ";")[[1]][-1], function(f)
+																				capwords(f, special.words =c("II", "ELA", "EOCT", "US")))
+		tmp.priors <- gsub(" EOCT", "", tmp.priors)
+		tmp.priors <- gsub(" 8", " Grd 8", tmp.priors)
+		tmp.priors <- gsub(" 7", " Grd 7", tmp.priors)
+		tmp.priors <- gsub(" 6", " Grd 6", tmp.priors)
+		# tmp.priors <- gsub("20", "'", tmp.priors)
+		tmp.priors <- gsub("Coordinate", "Coord", tmp.priors)
+		tmp.priors <- gsub("American", "Amer", tmp.priors)
+
+		return(tmp.priors)
+	}
+
+	gof.year <- ifelse(params$Year_Long_Form, "2018_2019", "2019")
+	gof.type <- NULL
+	if (grepl("BASELINE", params$seq.sgp)) gof.type <- ".BASELINE"
+	if (grepl("SIMEX$", params$seq.sgp)) gof.type <- paste0(gof.type, ".SIMEX")
+	if (grepl("SIMEX_RANKED", params$seq.sgp)) gof.type <- paste0(gof.type, ".RANKED_SIMEX")
+
+	eoc.analyses.list <- list()
+	for (ca in params$GoF_EOC_subjects) {
+		###   Sequential Analyses
+		seq.plots <-  unique(gsub(".png|.pdf", "", list.files(file.path(params$gof.path.seq[[1]], paste0(ca, ".", gof.year, gof.type)))))
+		seq.plots <- seq.plots[order(seq.plots)][seq.plots != "Decile_Tables"]
+
+		##    Find canonical progression (nested)
+		seq.prg <- sapply(seq.plots, function(f) strsplit(f, ";")[[1]])
+		max.order <- max(sapply(seq.prg, length))
+		ca.index <- match(ca, SGPstateData[[params$state.abv[[1]]]][["SGP_Configuration"]][["content_area.projection.sequence"]][[ca]])
+		canonical.ca <- gsub("MATHEMATICS", "MATH",
+					head(rev(SGPstateData[[params$state.abv[[1]]]][["SGP_Configuration"]][["content_area.projection.sequence"]][[ca]][1:ca.index]), max.order))
+		canonical.grd <- head(rev(SGPstateData[[params$state.abv[[1]]]][["SGP_Configuration"]][["grade.projection.sequence"]][[ca]][1:ca.index]), max.order)
+		canonical.year <- c(gof.year, SGP:::yearIncrement(gof.year, 1, tail(cumsum(head(rev(
+					SGPstateData[[params$state.abv[[1]]]][["SGP_Configuration"]][["year_lags.projection.sequence"]][[ca]][1:(ca.index-1)]), max.order)), -1)))
+		canonical.prog <- sapply(tail(seq(max.order), -1), function(f) paste(canonical.year[1:f], canonical.ca[1:f], canonical.grd[1:f], sep="_", collapse=";"))
+		seq.plot.list <- file.path(params$gof.path.seq[[1]], paste0(ca, ".", gof.year, gof.type), paste0(canonical.prog[which.max(nchar(canonical.prog))], ".pdf")) # which.max to only do the full progression plot
+
+		##    weed out norm group nesting
+		nest.test <- sapply(seq(seq.plots), function(f) grepl(seq.plots[f], seq.plots[-f]))
+		if(any(nest.test)) seq.plots <- seq.plots[-which(nest.test, arr.ind = TRUE)[,2]]
+
+		##    Save sequential progressions for table
+		eoc.analyses.list[[ca]][["Canonical"]][["Sequential"]] <- getPriors(seq.plots[seq.plots %in% canonical.prog])
+
+		##    Re-order (if necessary) and save non-canonical progressions
+		if (length(seq.noncan.prog <- seq.plots[!seq.plots %in% canonical.prog]) > 1) {
+			seq.prg2 <- sapply(seq.noncan.prog, function(f) strsplit(f, ";")[[1]], simplify = FALSE)
+			most.recent.ca <- sapply(seq.prg2, function(f) strsplit(f, "_")[[2]][2])
+			most.recent.grd <- sapply(seq.prg2, function(f) tail(strsplit(f, "_")[[2]], 1))
+			repeater.index <- rev(grep(strsplit(ca, "_")[[1]][1], most.recent.ca))
+			nonrep.index <- grep(strsplit(ca, "_")[[1]][1], most.recent.ca, invert=TRUE)
+			new.order <- c(match(names(rev(sort(most.recent.grd[nonrep.index]))), names(seq.prg2)), repeater.index)
+			eoc.analyses.list[[ca]][["Non_Canonical"]][["Sequential"]] <- sapply(seq.noncan.prog[new.order], getPriors)
+		} else {
+			if (length(seq.noncan.prog) == 1) eoc.analyses.list[[ca]][["Non_Canonical"]][["Sequential"]] <- getPriors(seq.noncan.prog)
+		}
+
+		###   Skip Year Analyses
+		skp.plots <-  unique(gsub(".png|.pdf", "", list.files(file.path(params$gof.path.skip[[1]], paste0(ca, ".", gof.year, gof.type)))))
+		skp.plots <- skp.plots[order(skp.plots)][skp.plots != "Decile_Tables"]
+
+		##    Find canonical progression (nested)
+		skp.prg <- sapply(skp.plots, function(f) strsplit(f, ";")[[1]])
+		# only recalculate if no skip-year included in canonical progression
+		if (SGPstateData[[params$state.abv[[1]]]][["SGP_Configuration"]][["year_lags.projection.sequence"]][[ca]][(ca.index-1)] < 2) {
+			max.order <- max(sapply(skp.prg, length))+1
+			canonical.ca <- gsub("MATHEMATICS", "MATH",
+							head(rev(SGPstateData[[params$state.abv[[1]]]][["SGP_Configuration"]][["content_area.projection.sequence"]][[ca]][1:ca.index]), max.order))[-2]
+			canonical.grd <- head(rev(SGPstateData[[params$state.abv[[1]]]][["SGP_Configuration"]][["grade.projection.sequence"]][[ca]][1:ca.index]), max.order)[-2]
+			canonical.year <- c(gof.year, SGP:::yearIncrement(gof.year, 1, tail(cumsum(head(rev(
+							SGPstateData[[params$state.abv[[1]]]][["SGP_Configuration"]][["year_lags.projection.sequence"]][[ca]][1:(ca.index-1)]), max.order)), -1)))[-2]
+			canonical.prog <- sapply(tail(seq((max.order-1)), -1), function(f) paste(canonical.year[1:f], canonical.ca[1:f], canonical.grd[1:f], sep="_", collapse=";"))
+		}
+		canonical.prog.seq <- canonical.prog[which.max(nchar(canonical.prog))]
+		skp.plot.list <- file.path(params$gof.path.skip[[1]], paste0(ca, ".", gof.year, gof.type), paste0(canonical.prog.seq, ".pdf")) # which.max to only do the full progression plot
+
+		##    weed out norm group nesting
+		nest.test <- sapply(seq(skp.plots), function(f) grepl(skp.plots[f], skp.plots[-f]))
+		if(any(nest.test)) skp.plots <- skp.plots[-which(nest.test, arr.ind = TRUE)[,2]]
+
+		##    Save sequential progressions for table
+		eoc.analyses.list[[ca]][["Canonical"]][["Skip_Year"]] <- getPriors(skp.plots[skp.plots %in% canonical.prog])
+
+		##    Re-order (if necessary) and save non-canonical progressions
+		if (length(skp.noncan.prog <- skp.plots[!skp.plots %in% canonical.prog]) > 1) {
+			skp.prg2 <- sapply(skp.noncan.prog, function(f) strsplit(f, ";")[[1]], simplify = FALSE)
+			most.recent.ca <- sapply(skp.prg2, function(f) strsplit(f, "_")[[2]][2])
+			most.recent.grd <- sapply(skp.prg2, function(f) tail(strsplit(f, "_")[[2]], 1))
+			repeater.index <- rev(grep(strsplit(ca, "_")[[1]][1], most.recent.ca))
+			nonrep.index <- grep(strsplit(ca, "_")[[1]][1], most.recent.ca, invert=TRUE)
+			new.order <- c(match(names(rev(sort(most.recent.grd[nonrep.index]))), names(skp.prg2)), repeater.index)
+			eoc.analyses.list[[ca]][["Non_Canonical"]][["Skip_Year"]] <- sapply(skp.noncan.prog[new.order], getPriors)
+		} else {
+			if (length(skp.noncan.prog) == 1) eoc.analyses.list[[ca]][["Non_Canonical"]][["Skip_Year"]] <- getPriors(skp.noncan.prog)
+		}
+
+		###   Create combined, ordered plot list
+		eoc.analyses.list[[ca]][["Plot_List"]] <- c(seq.plot.list, skp.plot.list) #  c(rbind(seq.plot.list, skp.plot.list))  # only do the full progression plot
+	}
+```
+
+
+
+```{r, cache=FALSE, results="asis", echo=FALSE}
+	for (ca in params$GoF_EOC_subjects) {
+		###   Progression Table:
+		canon.tbl <- data.table(matrix(c(
+									unlist(eoc.analyses.list[[ca]][["Canonical"]][["Sequential"]], use.names = FALSE),
+									unlist(eoc.analyses.list[[ca]][["Canonical"]][["Skip_Year"]], use.names = FALSE)), nrow=1))
+
+		seq_progs <- rbindlist(sapply(seq(eoc.analyses.list[[ca]][["Non_Canonical"]][["Sequential"]]), function(f) 		
+											data.table(matrix(unlist(eoc.analyses.list[[ca]][["Non_Canonical"]][["Sequential"]][[f]], use.names=FALSE), nrow=1)), simplify=FALSE), fill=TRUE)
+		skp_progs <- rbindlist(sapply(seq(eoc.analyses.list[[ca]][["Non_Canonical"]][["Skip_Year"]]), function(f) 		
+											data.table(matrix(unlist(eoc.analyses.list[[ca]][["Non_Canonical"]][["Skip_Year"]][[f]], use.names=FALSE), nrow=1)), simplify=FALSE), fill=TRUE)
+		#exp
+		if (any(skp_progs$V1 %in% seq_progs$V1)) {
+			fuzz.match.v1 <- match(seq_progs$V1, skp_progs$V1)
+			fuzz.match.v2 <- match(seq_progs$V2, skp_progs$V1)
+			dup.match <- intersect(fuzz.match.v1[!is.na(fuzz.match.v1)], fuzz.match.v2[!is.na(fuzz.match.v2)])
+			fuzz.match.v2[fuzz.match.v2 %in% dup.match] <- NA
+			fuzz.match.v1[is.na(fuzz.match.v1) & !is.na(fuzz.match.v2)] <- fuzz.match.v2[is.na(fuzz.match.v1) & !is.na(fuzz.match.v2)]
+			unmatched <- which(!seq(skp_progs$V1) %in% fuzz.match.v1)
+			skp_progs <- skp_progs[c(fuzz.match.v1, unmatched)]
+		} else {
+			if (any(skp_progs$V1 %in% seq_progs$V1)) {
+				fuzz.match.v2 <- match(seq_progs$V2, skp_progs$V1)
+				unmatched <- which(!seq(skp_progs$V1) %in% fuzz.match.v2)
+				skp_progs <- skp_progs[c(fuzz.match.v2, unmatched)]
+			}
+		}
+		# End exp
+		if (nrow(seq_progs) > nrow(skp_progs)) {
+			skp_progs <- rbindlist(list(skp_progs, data.table(matrix(nrow=(nrow(seq_progs) - nrow(skp_progs)), ncol=ncol(skp_progs)))))
+		}
+		if (nrow(skp_progs) > nrow(seq_progs)) {
+			seq_progs <- rbindlist(list(seq_progs, data.table(matrix(nrow=(nrow(skp_progs) - nrow(seq_progs)), ncol=ncol(seq_progs)))))
+		}
+		noncan.tbl <- cbind(seq_progs, skp_progs)
+
+		setnames(canon.tbl, c("First Prior", "Second Prior", "First Prior", "Second Prior"))
+		if (ncol(noncan.tbl)==4) {
+			setnames(noncan.tbl, c("First Prior", "Second Prior", "First Prior", "Second Prior"))
+		} else setnames(noncan.tbl, c("First Prior", "First Prior"))
+
+		prog.tbl <- rbindlist(list(canon.tbl, noncan.tbl), fill=TRUE)
+		prog.tbl[, Type := c("Canonical", "Additional", rep("", nrow(prog.tbl)-2))]
+		setcolorder(prog.tbl, c(5, 1:4))
+		row.names(prog.tbl) <- NULL
+		prog.tbl <- as.matrix(prog.tbl)
+		tmp.space <- paste0(rep(" ", floor((max(nchar(prog.tbl[,c(3,5)]), na.rm=T)-2)/2)), collapse="")
+		prog.tbl[which(is.na(prog.tbl))] <- paste0(tmp.space, "--", tmp.space)# '       --        '
+# print(prog.tbl)}
+		cat(paste0("\n###   ", capwords(ca), "\n\n"))
+
+		cat(dualTable(prog.tbl,
+			align= 'rcccc', #paste(rep("r", ncol(prog.tbl)), collapse=""), #  Warnings about rnames for HTML::htmlTable
+			n.rgroup = c(1, nrow(prog.tbl)-1), n.cgroup=c(1, 2, 2), cgroup=c("", "Sequential", "Skip Year"),
+			caption= paste("List of sequential and skip-year SGP progressions calculated for",  capwords(sub("MATHEMATICS", "MATH", ca)))))
+
+		placeFigure(
+				files = eoc.analyses.list[[ca]][["Plot_List"]],
+				rows = 1, columns = 2, pdf.width = 0.5,
+				caption = paste0("Sequential (left) and skip-year (right) fit plots for the canonical ", capwords(sub("MATHEMATICS", "MATH", ca)),
+												 " progression (", gsub("Grd", "Grade", paste0(eoc.analyses.list[[ca]][["Canonical"]][["Sequential"]], collapse="/")), " priors)"))
+	}
+```
