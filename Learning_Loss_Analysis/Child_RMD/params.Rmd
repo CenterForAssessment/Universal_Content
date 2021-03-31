@@ -20,7 +20,7 @@
   }
   params$asset.directory <- ifelse(tolower(params$render.format)=="bookdown", file.path(".", "assets"), file.path("..", "assets"))
 
-  tmp.leader <- getPath(params$base.directory, "..") # getPath gets one directory higher than base.directory here.  
+  tmp.leader <- getPath(params$base.directory, "..") # getPath gets one directory above base.directory here.  
   if (is.null(params$gof.path)) {
     params$gof.path <- file.path(tmp.leader, "Goodness_of_Fit")
   }
@@ -62,6 +62,14 @@
     if (!grepl("[\\]|[<]", params$draft.text)) {
       params$draft.text <- paste0("<p style='text-align: center;'><br><strong>", params$draft.text, "</strong><br></p>")
     }
+  }
+
+  ###   Keyword (i.e. "Learning Loss" or equivalent substitute)
+  if (is.null(params$keyword)) {
+    params$keyword <- "learning loss"
+  }
+  if (is.null(params$keyword_camel)) {
+    params$keyword_camel <- capwords(params$keyword)
   }
 
   ###   State name and education organization
@@ -185,4 +193,5 @@
   if (is.null(params$code.url)) {
     params$code.url <- paste0("https://github.com/CenterForAssessment/", gsub(" ", "_", params$state.name))
   }
+  save(params, file=file.path(params$base.directory, paste0("params", params$render.format, ".rda")))
 ```

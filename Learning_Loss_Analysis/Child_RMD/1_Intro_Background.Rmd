@@ -22,16 +22,16 @@ assessments taken at multiple points in an academic year. In this sentence we us
 the `figNum` function to get the figure number of the next figure.  Since it has
 not been placed in the report yet, we need to advance the counter by one - `figNum(1)`.
 
-```{r, fig.cap = "Example image placement: learning loss interim assessment illustration", out.width="100%", fig.align='center', fig.topcaption=TRUE, out.extra='data-prefix="Figure"', results="asis", echo=FALSE}
+```{r, ll-interim, fig.cap = "Example image placement: learning loss interim assessment illustration", out.width="80%", fig.align='center', out.extra=fig.out.ex, results="asis"}
 
 	if (tolower(params$render.format) == "bookdown") {
 		tmp.fig.caption <- knitr::opts_current$get("fig.cap")
 		cat(gsub("</p>\n", "</div>", gsub("<p>", "<div class='caption'>", markdown::markdownToHTML(text=Gmisc::figCapNo(tmp.fig.caption), fragment.only=TRUE))))
 	}
-	knitr::include_graphics(file.path(params$asset.directory, "images", "example_figure_1.png"), error = FALSE)
+	knitr::include_graphics(file.path(params$asset.directory, "images", "example_figure_1.png"), dpi=300, error = FALSE)
 ```
 
-As `r figNum()` shows, there are multiple assessment time points during the year
+As Figure `r figNum()` shows, there are multiple assessment time points during the year
 interim assessments.  This sentence shows how the `figNum` function works in more
 detail (the figure increment is 0 to get the last figure number.)
 
@@ -47,13 +47,13 @@ ipsum.
 Figure `r figNum(1)` illustrates how learning loss might be measured by annual
 state summative assessments taken at the end of an academic year.
 
-```{r, fig.cap = "Example learning loss illustration with a summative state assessment", out.width="100%", fig.align='center', fig.topcaption=TRUE, out.extra='data-prefix="Figure"', results="asis", echo=FALSE}
+```{r, ll-sumative, fig.cap = "Example learning loss illustration with a summative state assessment", out.width="80%", fig.align='center', out.extra=fig.out.ex, results="asis"}
 
 	if (tolower(params$render.format) == "bookdown") {
 		tmp.fig.caption <- knitr::opts_current$get("fig.cap")
 		cat(gsub("</p>\n", "</div>", gsub("<p>", "<div class='caption'>", markdown::markdownToHTML(text=Gmisc::figCapNo(tmp.fig.caption), fragment.only=TRUE))))
 	}
-	knitr::include_graphics(file.path(params$asset.directory, "images", "example_figure_2.png"), error = FALSE)
+	knitr::include_graphics(file.path(params$asset.directory, "images", "example_figure_2.png"), dpi=300, error = FALSE)
 ```
 
 Arcu dolor at nullam sed torquent tellus non. Cubilia eget in nisi, penatibus

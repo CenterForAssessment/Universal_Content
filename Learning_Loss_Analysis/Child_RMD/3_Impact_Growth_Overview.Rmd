@@ -10,18 +10,6 @@ mollis erat. Maximus dui litora donec, diam id nulla, vestibulum ut augue aliqua
 montes purus. Ut est tortor porta ligula ultrices dignissim nibh. A cum taciti
 suscipit nisi, eu habitant nisl, mollis est lacus.
 
-Figure `r figNum(1)` illustrates different degrees of learning loss might that
-may be encountered in student growth trajectories on state summative assessments.
-
-```{r, fig.cap = "Example learning loss illustration with a summative state assessment", out.width="100%", fig.align='center', fig.topcaption=TRUE, out.extra='data-prefix="Figure"', results="asis", echo=FALSE}
-
-	if (tolower(params$render.format) == "bookdown") {
-		tmp.fig.caption <- knitr::opts_current$get("fig.cap")
-		cat(gsub("</p>\n", "</div>", gsub("<p>", "<div class='caption'>", markdown::markdownToHTML(text=Gmisc::figCapNo(tmp.fig.caption), fragment.only=TRUE))))
-	}
-	knitr::include_graphics(file.path(params$asset.directory, "images", "example_figure_3.png"), error = FALSE)
-```
-
 Integer nisl maecenas nec arcu odio tortor mauris, commodo. Morbi, cubilia risus
 pulvinar vestibulum cubilia malesuada. Facilisi nec tristique in facili sis
 tincidunt et dictumst rutrum cum. Sed amet pellentesque porta enim accumsan cum
@@ -35,7 +23,7 @@ amet sociosqu.
 ```{r, echo=FALSE}
 # results='asis',
 	rgroup.indx <- diff(c(which(stu_msgp[,1] != ""), (nrow(stu_msgp)+1)))
-	tmp.caption <- "Median baseline and cohort SGPs for 2019 and 2021 by content area and grade"
+	tmp.caption <- "Median baseline and cohort SGPs by year, content area and grade"
 
   knitr::knit_print(
 		htmlTable::htmlTable(stu_msgp,
@@ -45,20 +33,22 @@ amet sociosqu.
 ```
 
 Here is an example of how to include tables for counter/caption similar to figures
-in pagedown template.  If we go this route Adam will need to put this into a function
-to render the table differenly in bookdown than in pagedown
+in `pagedown` template.  Adam has been unable to put this into a function because
+the `include_graphics` function does not play well with environments other than
+the top level.  It also can NOT be done with `knitr::knit_child`.  However, this
+solution seems pretty clean and lets us render the table the same way in `bookdown`
+and `pagedown` with a single process.  Its a little convoluted with the requirement
+of the invisible gif and the "figtab" class requirement, but I'm happy with where
+it is at.
 
-
-```{r fig.cap="Median baseline and cohort SGPs for 2019 and 2021 by content area and grade", out.width="0", out.height="0", out.extra='data-prefix="Table"', results="asis", echo=FALSE, eval=ifelse(tolower(params$render.format) == "pagedown", TRUE, FALSE)}
-
+```{r, example-table-2, fig.cap="Median baseline and cohort SGPs by year, content area and grade", out.width="0", out.height="0", out.extra=tab.out.ex, class = "figtab", results="asis"}
 	###  Include VERY small, transparent image to create table title and
 	knitr::include_graphics("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", dpi=NA, error = FALSE)
 
   knitr::knit_print(
 		htmlTable::htmlTable(stu_msgp,
-			title="", align=paste(rep('c', ncol(stu_msgp)), collapse=""),
 			tspanner=rep("", length(rgroup.indx)), n.tspanner=rgroup.indx,
-	    caption=NULL, css.table="margin-top: -1.25em;margin-bottom: 1em;min-width: 75%;"))
+	    caption=tblCap(knitr::opts_current$get("fig.cap"))))
 ```
 
 Mauris sociis, vitae, sed vehicula lectus vulputate. Leo leo nibh laoreet aliquam

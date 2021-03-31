@@ -29,12 +29,18 @@ comparisons done at the elementary school level.
 ```
 
 Here is an example of how to include tables for counter/caption similar to figures
-in pagedown template.  If we go this route Adam will need to put this into a function
-to render the table differenly in bookdown than in pagedown
+in pagedown template.  This table uses the caption format similar to the figures.
+In the "Growth Impact" section there is an [example](#fig:example-table-2) of how to do this with the
+default table caption format (which I personally like better, and can be styled
+more as well - color to match figure caps/headers, etc.).  Note that this table
+is set to only be "eval"uated when the `render.format` is "pagedown".
+`r ifelse(tolower(params$render.format) == "bookdown", "(Table not shown in 'bookdown' rendering.)", "")`
 
-
-```{r fig.cap="Baseline and cohort SGP counts and percentages for 2019 and 2021 by content area and grade", out.width="0", out.height="0", out.extra='data-prefix="Table"', results="asis", echo=FALSE, eval=ifelse(tolower(params$render.format) == "pagedown", TRUE, FALSE)}
-
+```{r, example-table-1, fig.cap="Baseline and cohort SGP counts and percentages by year, content area and grade", out.width="0", out.height="0", out.extra='style="display: none;" data-prefix="Table"', results="asis", echo=FALSE, eval=ifelse(tolower(params$render.format) == "pagedown", TRUE, FALSE)}
+	##  Could add another class div similar to 'figtab' that just has a break: avoid
+	##  and not the caption display suppression. For now just manually add div
+	cat("
+<div style=\"break-inside: avoid;\">")
 	###  Include VERY small, transparent image to create table title and
 	knitr::include_graphics("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", dpi=NA, error = FALSE)
 
@@ -44,6 +50,8 @@ to render the table differenly in bookdown than in pagedown
 			tspanner=rep("", length(rgroup.indx)), n.tspanner=rgroup.indx,
 			n.cgroup=c(4, 2, 2), cgroup=c("", "Baseline", "Cohort"),
 	    caption=NULL, css.table="margin-top: -1.25em;margin-bottom: 1em;min-width: 75%;"))
+	cat("
+</div>")
 ```
 
 Arcu dolor at nullam sed torquent tellus non. Cubilia eget in nisi, penatibus aenean

@@ -1,12 +1,22 @@
 
 ```{r setup, echo=FALSE, include=FALSE}
-  ###   set a universal Cache path
+  ###   set a global knitr options
   knitr::opts_chunk$set(
     cache.path = file.path(params$base.directory, "_cache", "Learning_Loss"),
     echo = FALSE,
     fig.topcaption = TRUE,
-    fig.cap = TRUE,
-    dpi = 150)
+    fig.cap = TRUE) # For pagedown (turned off in bookdown and provided manually)
+
+  knitr::knit_hooks$set(class = function(before, options, envir) {
+    if(before){
+      sprintf("<div class = '%s'>", options$class)
+    }else{
+      "</div>"
+    }
+  })
+
+  fig.out.ex <- 'data-prefix="Figure"'
+  tab.out.ex <- 'style="display: none;" data-prefix="Table"'
 
   ###   Load some R packages and functions required for HTML table creation silently.
   ###   Load SGP and other packages here to avoid messages.

@@ -15,16 +15,25 @@ report.config <- list(
     # date = "March 2021",  #  auto configured to MONTH YEAR format
     executive.summary = TRUE,
     draft = TRUE,
-    project.team = "SGP Team",
+    # project.team = "SGP Team",
     project.email = "anyone@nciea.org"
   ),
   ###   client.info to be customized for each state.
   client.info=c(), # placeholder for list order
   params = list(
-    # draft.text = "ALTERNATE DRAFT TEXT", #  auto configured to 'DRAFT REPORT' if report.config$top.level$draft = TRUE
+    # draft.text = "ALTERNATE DRAFT TEXT", #  auto configured to 'DRAFT REPORT -- DO NOT CITE' if top.level$draft = TRUE
+    keyword = "learning loss", # should be lower case.  Camel applied as needed in params.Rmd or can be customized as keyword_camel
     base.directory = getwd(),
     unvrsl.rmd.path = file.path("..", "..", "..", "Universal_Content", "Learning_Loss_Analysis", "Child_RMD"),
     custom.rmd.path = file.path("assets", "rmd", "Custom_Content")
+  ),
+  output = list(
+    bookdown = list(
+      directory = "site"
+    )#,
+    # pagedown = list(
+    #   file = "default"
+    # )
   )
 )
 
@@ -60,7 +69,7 @@ if (!is.null(report.config$top.level$draft)) {
 ###   Add common top-level YAML fields
 
 if (is.null(report.config$top.level$title)) {
-  report.config$top.level$title <- paste(report.config$params$state.name, "Learning Loss Analysis")
+  report.config$top.level$title <- paste(report.config$params$state.name, SGP::capwords(report.config$params$keyword), "Analysis")
 }
 if (is.null(report.config$top.level$subtitle)) {
   report.config$top.level$subtitle <- "Academic Impact During the COVID-19 Pandemic"
@@ -86,4 +95,13 @@ if (is.null(report.config$client.info$state.abv)){
     report.config$client.info$state.abv <- datasets::state.abb[datasets::state.name == report.config$client.info$state.name]
     # getStateAbbreviation(report.config$client.info$state.name, type="Abbreviation") # Still broken for DEMO and may work in all cases...
   }
+}
+
+##    Output info
+if (is.null(report.config$output$bookdown)){
+  report.config$output$bookdown$directory <- "site"
+}
+
+if (is.null(report.config$output$pagedown)){
+  report.config$output$pagedown$file <- gsub(" ", "_", paste(report.config$client.info$state.abv, SGP::capwords(report.config$params$keyword), "Analysis"))
 }

@@ -10,6 +10,18 @@ mollis erat. Maximus dui litora donec, diam id nulla, vestibulum ut augue aliqua
 montes purus. Ut est tortor porta ligula ultrices dignissim nibh. A cum taciti
 suscipit nisi, eu habitant nisl, mollis est lacus.
 
+Figure `r figNum(1)` illustrates different degrees of learning loss might that
+may be encountered in student growth trajectories on state summative assessments.
+
+```{r, fig.cap = "Example learning loss illustration with a summative state assessment", out.width="100%", fig.align='center', fig.topcaption=TRUE, out.extra=fig.out.ex, results="asis"}
+
+	if (tolower(params$render.format) == "bookdown") {
+		tmp.fig.caption <- knitr::opts_current$get("fig.cap")
+		cat(gsub("</p>\n", "</div>", gsub("<p>", "<div class='caption'>", markdown::markdownToHTML(text=Gmisc::figCapNo(tmp.fig.caption), fragment.only=TRUE))))
+	}
+	knitr::include_graphics(file.path(params$asset.directory, "images", "example_figure_3.png"), error = FALSE)
+```
+
 Integer nisl maecenas nec arcu odio tortor mauris, commodo. Morbi, cubilia risus
 pulvinar vestibulum cubilia malesuada. Facilisi nec tristique in facili sis
 tincidunt et dictumst rutrum cum. Sed amet pellentesque porta enim accumsan cum

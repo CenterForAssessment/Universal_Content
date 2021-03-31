@@ -1,12 +1,13 @@
 
 ```{r, cache=TRUE, echo=FALSE, include=FALSE, Student_Growth}
-###  Create summaries of SGPs here...
+###   Create summaries of SGPs here...
 
   stu_msgp <- Report_Data[VALID_CASE=='VALID_CASE' & eval(parse(text = params$grd.subset)), list(
                     MEAN_BASELINE_SGP = round(mean(eval(parse(text = params$baseline.sgp)), na.rm = TRUE), 1),
                     MEAN_COHORT_SGP = round(mean(eval(parse(text = params$cohort.sgp)), na.rm = TRUE), 1)),
                   keyby = c("CONTENT_AREA", "GRADE", "YEAR")]
 
+###   Put table formatting here only because used in two tables later
   if (any(as.numeric(params$grades)>9)) {
     stu_msgp[, GRADE := as.numeric(GRADE)]
     setkey(stu_msgp, CONTENT_AREA, GRADE)
@@ -20,5 +21,9 @@
 
   tmp.css.cell <- matrix(nrow=nrow(stu_msgp), ncol=ncol(stu_msgp))
   tmp.css.cell[which(1:nrow(stu_msgp) %% 2 == 0),2:ncol(stu_msgp)] <- "border-bottom: 1px solid grey;"
-  stu_msgp <- htmlTable::addHtmlTableStyle(stu_msgp, css.cell=tmp.css.cell, css.tspanner.sep = "border-top: 2px solid grey;")            
+  stu_msgp <- htmlTable::addHtmlTableStyle(stu_msgp,
+    align=paste(rep('c', ncol(stu_msgp)), collapse=""),
+    css.table="min-width: 85%;", # only port to addHtmlTableStyle if strictly using pagedown format
+    # css.table="margin-top: -1.25em;margin-bottom: 1em;min-width: 75%;",
+    css.cell=tmp.css.cell, css.tspanner.sep = "border-top: 2px solid grey;")            
 ```

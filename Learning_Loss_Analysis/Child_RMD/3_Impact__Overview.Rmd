@@ -11,12 +11,13 @@ montes purus. Ut est tortor porta ligula ultrices dignissim nibh. A cum taciti
 suscipit nisi, eu habitant nisl, mollis est lacus.
 
 Figure `r figNum(1)` shows how to place multiple images or plots in a single figure
-frame. It also illustrates different learning loss trajectories and recovery patterns
-that the state might encounter in student growth over an extended timeline. This
-emphasizes the importance of being able to measure and monitor student growth
-this year and going forward in 2022.
+frame. Note that you should use `fig.show = 'hold'` and NOT ` fig.align='center'`
+in the `knitr` chunk.  It also illustrates different learning loss trajectories
+and recovery patterns that the state might encounter in student growth over an
+extended timeline. This emphasizes the importance of being able to measure and
+monitor student growth this year and going forward in 2022.
 
-```{r, fig.cap = "Example learning loss recovery trajectories.", fig.show = 'hold', out.width="50%", fig.align='center', fig.topcaption=TRUE, out.extra='data-prefix="Figure"', results="asis", echo=FALSE}
+```{r, fig.cap = "Example learning loss recovery trajectories.", fig.show = 'hold', out.width="50%", out.extra=fig.out.ex, results="asis"}
 
 	if (tolower(params$render.format) == "bookdown") {
 		tmp.fig.caption <- knitr::opts_current$get("fig.cap")
