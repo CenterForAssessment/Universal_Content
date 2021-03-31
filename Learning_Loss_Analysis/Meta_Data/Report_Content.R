@@ -37,8 +37,8 @@ rmd.files <- list(
       file.order = c(
         "setup_appendix_a.Rmd",   #  Should be appendix specific (counter override, etc.)
         "params.Rmd",  #  Could be appendix specific - params_appendix_a.Rmd
-        "Appendix_A_Intro.Rmd" #,
-        # "Appendix_A_Grade_Level.Rmd"
+        "Appendix_A_Intro.Rmd",
+        "Appendix_A_Grade_Level.Rmd"
       ),
       references = NULL
     )

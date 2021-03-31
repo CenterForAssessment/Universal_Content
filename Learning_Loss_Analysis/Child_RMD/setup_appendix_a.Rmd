@@ -5,11 +5,11 @@
     cache.path = file.path(params$base.directory, "_cache", "GoFit"),
     echo = FALSE,
     fig.topcaption = TRUE,
-    fig.cap = TRUE,
-    dpi = 150)
+    fig.cap = TRUE) # For pagedown (turned off in bookdown and provided manually)
 
   ###   Load some R packages and functions required for HTML table creation silently.
   ###   Load SGP and other packages here to avoid messages.
+  require(ymlthis)
 	require(data.table)
   require(SGP)
 
