@@ -53,7 +53,7 @@ custom.config <- list(
   ),
   params = list(
     draft.text = "DRAFT REPORT -- DO NOT CITE", #
-    keyword = "learning loss" # should be lower case.  Camel applied as needed in params.Rmd or can be customized as keyword_camel
+    keyword = "academic impact" # should be lower case.  Camel applied as needed in params.Rmd or can be customized as keyword_camel
   )
 )
 
