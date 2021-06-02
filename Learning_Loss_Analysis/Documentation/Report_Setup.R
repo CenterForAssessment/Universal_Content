@@ -50,6 +50,10 @@ custom.config <- list(
   top.level=list(             # Title/subtitle, author.names, author.affil, date
     title = "Example Academic Impact Analysis",
     subtitle = "Student Achievement and Growth during the COVID-19 Pandemic"
+  ),
+  params = list(
+    draft.text = "DRAFT REPORT -- DO NOT CITE", #
+    keyword = "learning loss" # should be lower case.  Camel applied as needed in params.Rmd or can be customized as keyword_camel
   )
 )
 
