@@ -3,7 +3,7 @@
 #####
 
 ###   Set up your R working directory
-setwd("... /Documentation")
+setwd("./Documentation")
 
 ###   Load/Format/Subset Report Data
 load("../Data/Demonstration_COVID_SGP_2021_STEP_3c.Rdata")

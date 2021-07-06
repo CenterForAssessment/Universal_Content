@@ -1,9 +1,20 @@
 ## Methods
 
+```{r, cache=FALSE, echo=FALSE, include=FALSE}
+##  Get code.url text if provided
+  if (!is.null(params$code.url)) {
+    if (length(unique(params$code.url)) > 1) {
+      url.string <- paste(paste0("[here](", head(unique(params$code.url),-1), ")", collapse=", "),
+                          paste0("[here](", tail(unique(params$code.url), 1), ")."), sep=" and ")
+    }  else url.string <- paste0("at [this link](", noquote(params$code.url[[1]]), ").")
+
+    url.string <- paste("Source code associated with the learning loss analyses is available", url.string)
+  }
+```
+
 All analyses were conducted using the [`R` Software Environment](http://www.r-project.org/)
 [@Rsoftware] in conjunction with the [`SGP` package](https://github.com/CenterForAssessment/SGP) [@sgp2020].
-`r if(!is.null(params$code.url)) {paste0("Source code associated with the learning
-loss analyses is available at [this link](", noquote(params$code.url), ").")}`
+`r if(!is.null(params$code.url)) {paste0(url.string)}`
 
 Lorem ipsum dolor sit amet, nisi augue pulvinar sed odio, orci, ligula in a
 maecenas. Nullam pellentesque est sed aliquam lacus sagittis, non senectus montes,

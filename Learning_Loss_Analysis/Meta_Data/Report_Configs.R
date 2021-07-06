@@ -21,11 +21,11 @@ report.config <- list(
   ###   client.info to be customized for each state.
   client.info=c(), # placeholder for list order
   params = list(
-    # draft.text = "ALTERNATE DRAFT TEXT", #  auto configured to 'DRAFT REPORT -- DO NOT CITE' if top.level$draft = TRUE
+    draft.text = c(), # "ALTERNATE DRAFT TEXT", #  auto configured to 'DRAFT REPORT -- DO NOT CITE' if report.config$top.level$draft = TRUE
     keyword = "learning loss", # should be lower case.  Camel applied as needed in params.Rmd or can be customized as keyword_camel
     base.directory = getwd(),
     unvrsl.rmd.path = file.path("..", "..", "..", "Universal_Content", "Learning_Loss_Analysis", "Child_RMD"),
-    custom.rmd.path = file.path("assets", "rmd", "Custom_Content")
+    custom.rmd.path = file.path("assets", "rmd", "Custom_Content")#,
   ),
   output = list(
     bookdown = list(
@@ -61,15 +61,15 @@ if (is.null(report.config$params$state.name)) {
 if (!is.null(report.config$top.level$draft)) {
   if (is.logical(report.config$top.level$draft)) {
     if (report.config$top.level$draft & is.null(report.config$params$draft.text)) {
-      report.config$params$draft.text <- "DRAFT REPORT -- DO NOT CITE"
-    }
+      report.config$params$draft.text <- "DRAFT REPORT -- DO NOT CITE OR CIRCULATE"
+    } else report.config$params$draft.text <- ""
   }
 }
 
 ###   Add common top-level YAML fields
 
 if (is.null(report.config$top.level$title)) {
-  report.config$top.level$title <- paste(report.config$params$state.name, SGP::capwords(report.config$params$keyword), "Analysis")
+  report.config$top.level$title <- paste(report.config$client.info$state.name, SGP::capwords(report.config$params$keyword), "Analysis")
 }
 if (is.null(report.config$top.level$subtitle)) {
   report.config$top.level$subtitle <- "Academic Impact During the COVID-19 Pandemic"
@@ -88,20 +88,19 @@ if (is.null(report.config$top.level$bibliography)) {
 }
 
 ##    Client Info
-if (is.null(report.config$client.info$state.abv)){
+if (is.null(report.config$client.info$state.abv)) {
   if (toupper(report.config$client.info$state.name)=="DEMONSTRATION COVID") {
     report.config$client.info$state.abv <- "DEMO_COVID"
   } else {
-    report.config$client.info$state.abv <- datasets::state.abb[datasets::state.name == report.config$client.info$state.name]
-    # getStateAbbreviation(report.config$client.info$state.name, type="Abbreviation") # Still broken for DEMO and may work in all cases...
+    report.config$client.info$state.abv$State_Assessment <- getStateAbbreviation(report.config$client.info$state.name)
   }
 }
 
 ##    Output info
-if (is.null(report.config$output$bookdown)){
+if (is.null(report.config$output$bookdown)) {
   report.config$output$bookdown$directory <- "site"
 }
 
-if (is.null(report.config$output$pagedown)){
-  report.config$output$pagedown$file <- gsub(" ", "_", paste(report.config$client.info$state.abv, SGP::capwords(report.config$params$keyword), "Analysis"))
+if (is.null(report.config$output$pagedown)) {
+  report.config$output$pagedown$file <- gsub(" ", "_", paste(report.config$client.info$state.name, SGP::capwords(report.config$params$keyword), "Analysis"))
 }

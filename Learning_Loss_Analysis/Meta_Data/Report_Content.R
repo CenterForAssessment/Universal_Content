@@ -52,7 +52,7 @@ rmd.files <- list(
   pagedown = list(
     rmd.path = c(),
     report = list(
-      file.order = c(1:4, 6, 5, 7:20)
+      file.order = c(1:4, 6, 5, 7:21)
     )
   )
 )
@@ -72,6 +72,7 @@ if (all(is.na(rmd.files$report.source$custom))) {
 } else {
   if (any(is.na(rmd.files$report.source$custom))) {
     message("\n\t", list.files(report.config$params$custom.rmd.path)[which((is.na(rmd.files$report.source$custom)))], " is located in the customized content directory, but does not appear in the report 'file.order'\n")
+    rmd.files$report.source$custom <- rmd.files$report.source$custom[!is.na(rmd.files$report.source$custom)]
   }
 }
 

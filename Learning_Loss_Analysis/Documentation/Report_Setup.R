@@ -4,22 +4,23 @@
 ###   and create/customize/complete the required YAML and RMD file config lists
 #####
 
-###   Set up your R working directory
-setwd("... /Documentation")
+###   Set R working directory to the Documentation folder
+setwd("./Documentation")
 
-###   Install/update (if needed) the latest packages
-remotes::install_github("centerforassessment/Literasee")
-remotes::install_github('rstudio/rmarkdown')
-remotes::install_github('rstudio/bookdown')
-remotes::install_github('rstudio/pagedown')
+###   Locate the "Universal_Content" directory
+universal.content.path <- file.path("..", "..", "..", "Universal_Content")
 
+###   Install/update packages used in the Learning Loss Report
+source(file.path(universal.content.path, "Learning_Loss_Analysis", "Meta_Data", "Report_Packages.R"))
+
+###   Load packages required for report setup
 require(Literasee)
 
 ###   Set up new report directory
 ###   An initial setup will include copying the Literasee package assets and
 ###   any custom RMD templates (from "Universal_Content" or another, similar, state)
 
-template.path <- file.path("..", "..", "..", "Universal_Content", "Learning_Loss_Analysis", "Child_RMD", "Template_Custom_Content")
+template.path <- file.path(universal.content.path, "Learning_Loss_Analysis", "Child_RMD", "Template_Custom_Content")
 setupReportDirectory(custom.content.path = template.path)
 
 ###   It may be necessary to occasionally update Literasee package assets.
@@ -38,8 +39,8 @@ setupReportDirectory(custom.content.path = template.path)
 
 custom.config <- list(
   client.info = list(
-    state.name="Demonstration COVID", # required at a minimum
-    # state.abv = "DEMO", # Added manually in Report_Configs.R -- need to fix getStateAbbreviation for DEMO/DEMO_COVID!
+    state.name = "Demonstration COVID", # required at a minimum
+    state.abv = "D.C.", # for cover page, not SGPstateData
     city.name = "Washington",
     organization = "Demonstration Department of Education",
     org.head = "Joseph R. Biden, Jr.",
@@ -58,15 +59,29 @@ custom.config <- list(
 )
 
 ##   The following script will merge the report.config (universal) and custom.config lists and return 'report.config' to be used in next steps
-source(file.path("..", "..", "..", "Universal_Content", "Learning_Loss_Analysis", "Meta_Data", "Report_Configs.R"))
+source(file.path(universal.content.path, "Learning_Loss_Analysis", "Meta_Data", "Report_Configs.R"))
 
 ##   The following script will merge the rmd.files (universal) and custom.files lists and return 'rmd.files' to be used in next steps
 # custom.files <- list(...) # override defaults if desired.  Otherwise a message that universal list will be used.
-source(file.path("..", "..", "..", "Universal_Content", "Learning_Loss_Analysis", "Meta_Data", "Report_Content.R"))
+source(file.path(universal.content.path, "Learning_Loss_Analysis", "Meta_Data", "Report_Content.R"))
+
+##    Besides adding/reordering Rmd files though custom.files, one can request a
+##    subset of files. This will result in a truncated report, allowing chapter/section
+##    editing/development. You always need to include `setup.Rmd` and `params.Rmd`!
+
+custom.files <- list(
+  report = list(
+    file.order = c("setup.Rmd", "params.Rmd", "0_Executive_Summary.Rmd")),
+  appendices = c())
+
+source(file.path(universal.content.path, "Learning_Loss_Analysis", "Meta_Data", "Report_Content.R"))
+
+
+#####
+###    Create the .yml and .Rmd "master/parent" documents for the `bookdown` site and `pagedown` report
+#####
+
+createReportScripts(report_config=report.config, rmd_file_list=rmd.files)
 
 ###   Save report YAML and file configurations
 save(list=c("report.config", "rmd.files"), file = "Report_Configuration_MetaData.rda")
-
-
-###    Create the .yml and .Rmd "master/parent" documents for the `bookdown` site and `pagedown` report
-createReportScripts(report_config=report.config, rmd_file_list=rmd.files)
