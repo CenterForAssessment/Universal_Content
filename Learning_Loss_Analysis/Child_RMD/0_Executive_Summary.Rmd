@@ -8,14 +8,32 @@
 ###   Test Name (Abbreviation)
 	if(length(params$test.name) > 1) {
 		test.name.abv <- paste(
-					paste0(head(params$test.name, -1),  " (", head(params$test.abv, -1), ")", collapse=", "),
-					paste0(tail(params$test.name, 1),  " (", tail(params$test.abv, 1), ")"), sep=" and ")
-		test.subj <- paste(
-					paste0(head(params$GL_text, -1),  " (", head(params$test.abv, -1), ")", collapse=", "),
-					paste0(tail(params$GL_text, 1),  " (", tail(params$test.abv, 1), ")"), sep=" and ")
-
-	} else test.name.abv <- paste0(params$test.name, " (", params$test.abv, ")")
-
+				paste0(head(params$test.name, -1),  " (", head(params$test.abv, -1), ")", collapse=", "),
+				paste0(tail(params$test.name, 1),  " (", tail(params$test.abv, 1), ")"), sep=" and ")
+		if (any(tmp.dups <- duplicated(params$GL_text_long))) {
+			dup.indx <- which(params$GL_text_long %in% params$GL_text_long[tmp.dups])
+			dup.txt <- unlist(params$GL_text_long[dup.indx[1]], use.names = F)
+			dup.test.abv <- paste(head(params$test.abv[dup.indx], -1), tail(params$test.abv[dup.indx], 1), sep=" and ")
+			tmp.tests <- c(dup.test.abv, unlist(params$test.abv[-dup.indx], use.names=F))
+			tmp.txt <- c(dup.txt, unlist(params$GL_text_long[-dup.indx], use.names=F))
+		} else {
+			tmp.tests <- params$test.abv
+			tmp.txt <- params$GL_text_long
+		}
+		if (all(tmp.dups)) {
+			test.subj <- paste0(tmp.txt, " from ", tmp.tests)
+		} else {
+			test.subj <- paste(
+					paste0(head(tmp.txt, -1),  " from ", head(tmp.tests, -1), collapse=", "),
+					paste0(tail(tmp.txt, 1),  " from ", tail(tmp.tests, 1)), sep=" and ")
+		}
+		# test.subj <- paste(
+		# 		paste0(head(params$GL_text_long, -1),  " (", head(params$test.abv, -1), ")", collapse=", "),
+		# 		paste0(tail(params$GL_text_long, 1),  " (", tail(params$test.abv, 1), ")"), sep=" and ")
+	} else {
+		test.name.abv <- paste0(params$test.name[[1]], " (", params$test.abv[[1]], ")")
+		test.subj <- paste0(params$test.name[[1]], " from ", params$test.abv[[1]])
+	}
 
 ###   Executive Summary figures/stats that need to be calculated
 
