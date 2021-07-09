@@ -14,8 +14,9 @@ rmd.files <- list(
       "1_Intro_Background.Rmd",
       "1_Intro_Methods.Rmd",
       "1_Intro_Data_Sources.Rmd",
-      "2_Participate__Analysis.Rmd",
+      # "2_Participate__Analysis.Rmd",
       "2_Participate__Overview.Rmd",
+      "2_Participate_Enrolled_Students.Rmd",
       "2_Participate_Counts.Rmd",
       "2_Participate_Mode_of_Instruction.Rmd",
       "2_Participate_Attendance.Rmd",
@@ -29,16 +30,28 @@ rmd.files <- list(
       "4_Discussion__Overview.Rmd",
       "9_Summary.Rmd"
     ),
+    # subset.file.order = c(), # either numeric index (must include 1:2 for `setup.Rmd` and `params.Rmd`) or character string of .Rmd names in file.order
     references = TRUE
   ),
   appendices = list(
     A = list(
+      title = "Participation Supplimental Analyses",
+      file.order = c(
+        "setup_participation_appendix.Rmd",   #  Should be appendix specific (counter override, etc.)
+        "params.Rmd",  #  Could be appendix specific - params_appendix_a.Rmd
+        "Appendix_Participation_Intro.Rmd",
+        "Appendix_Participation_by_School.Rmd",
+        "Appendix_Participation_MinMax_Replace.Rmd"
+      ),
+      references = NULL
+    ),
+    G = list(
       title = "Goodness of Fit Plots",
       file.order = c(
-        "setup_appendix_a.Rmd",   #  Should be appendix specific (counter override, etc.)
-        "params.Rmd",  #  Could be appendix specific - params_appendix_a.Rmd
-        "Appendix_A_Intro.Rmd",
-        "Appendix_A_Grade_Level.Rmd"
+        "setup_gofit_appendix.Rmd",   #  Should be appendix specific (counter override, etc.)
+        "params.Rmd",  #  Could be appendix specific - params_gofit_appendix.Rmd
+        "Appendix_GoFit_Intro.Rmd",
+        "Appendix_GoFit_Grade_Level.Rmd"
       ),
       references = NULL
     )
@@ -52,7 +65,7 @@ rmd.files <- list(
   pagedown = list(
     rmd.path = c(),
     report = list(
-      file.order = c(1:4, 6, 5, 7:21)
+      file.order = c(1:4, 6, 5, 7:20)
     )
   )
 )

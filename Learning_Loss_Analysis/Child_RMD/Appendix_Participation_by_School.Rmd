@@ -1,0 +1,32 @@
+## Participation by School Level
+
+<!--  
+  If we want to make this universal, the stats in the text below will need to be
+  identified in a "Report_Analyses" object and extracted in a generic way.
+  Or add a custom .Rmd for each state...  
+-->
+
+Figures `r figNum(1)` and `r figNum(2)` plot the cumulative number of non-participating
+students at the school level. On the x-axis, schools are ordered by number of
+non-participating students, from greatest to least. The figures show that most of
+the non-participation can be accounted for by a minority of the schools. In ELA,
+447 out of 1,799 schools had at least one student who did not test. In Math 556
+out of 1,799 schools had at least one student who did not test.
+
+```{r, school-cumulative-ela, fig.cap = "Cumulative Number of Students Missing at the School Level, ELA.", out.width="80%", fig.align='center', out.extra=fig.out.ex, results="asis"}
+
+	if (tolower(params$render.format) == "bookdown") {
+		tmp.fig.caption <- knitr::opts_current$get("fig.cap")
+		cat(gsub("</p>\n", "</div>", gsub("<p>", "<div class='caption'>", markdown::markdownToHTML(text=Gmisc::figCapNo(tmp.fig.caption), fragment.only=TRUE))))
+	} else fign <- figNumIncrement() # Advance counter for pagedown
+	knitr::include_graphics(file.path(params$asset.directory, "Rplots", "participation", "School_cummulative_nonparticipation__State_Assessment_ELA.png"), dpi=300, error = FALSE)
+```
+
+```{r, school-cumulative-math, fig.cap = "Cumulative Number of Students Missing at the School Level, Mathematics.", out.width="80%", fig.align='center', out.extra=fig.out.ex, results="asis"}
+
+	if (tolower(params$render.format) == "bookdown") {
+		tmp.fig.caption <- knitr::opts_current$get("fig.cap")
+		cat(gsub("</p>\n", "</div>", gsub("<p>", "<div class='caption'>", markdown::markdownToHTML(text=Gmisc::figCapNo(tmp.fig.caption), fragment.only=TRUE))))
+	} else fign <- figNumIncrement() # Advance counter for pagedown
+	knitr::include_graphics(file.path(params$asset.directory, "Rplots", "participation", "School_cummulative_nonparticipation__State_Assessment_MATHEMATICS.png"), dpi=300, error = FALSE)
+```

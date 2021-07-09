@@ -1,0 +1,158 @@
+## Replacing Missing Scores
+
+The key question around non-partipcation is whether it jeopardizes our understanding
+of student performance. One simple way to check whether non-participation could
+impact our overall conclusions is by replacing the missing scale scores and achievement
+levels of students who did not participate. An extreme approach is to replace
+these missing values with lowest possible scores and levels, or the highest possible
+scores and levels. A less extreme approach is to replace scores and levels with
+those the non-participating students were likely to receive based on their prior
+performance. This less extreme approach involves determining what scores and levels
+are likely for each student, based on methods like regression. Here we avoid the
+methodological complexity involved in this less extreme approach, and instead
+simply replace missing values – once by replacing the missing values with the
+minimum obtained score and level per grade, and then again by replacing the missing
+values with the highest obtained score and level. For each replacement, we then
+compute school- and state-level mean scale scores and percent proficient, then
+compare to the observed scores.
+
+Table `r tblNum(1)` shows the worst and best case scenarios in school mean scale
+scores when replacing missing test scores with the minimum and maximum scores.
+
+```{r, minmax-mss-state, fig.cap="State-Level Mean Scale Score, Before and After Replacement with Minimum and Maximum Scores.", out.width="0", out.height="0", out.extra=tab.out.ex, class = "figtab", results="asis"}
+
+  tmp.assessment <- "State_Assessment"
+
+  ###   State-Level Min/Max table: Mean SS
+  minmax_mss_state <- copy(Report_Analyses[["participation"]][[tmp.assessment]][["state_minmax_diff_mean_pctp"]])
+  minmax_mss_state <- minmax_mss_state[, list(
+    CONTENT_AREA, GRADE, MEAN_SCALE_SCORE, SD_SCALE_SCORE,
+    MEAN_SCALE_SCORE_altMIN, MEAN_SCALE_SCORE_minDIF, MEAN_SCALE_SCORE_altMAX, MEAN_SCALE_SCORE_maxDIF)]
+  setkey(minmax_mss_state, CONTENT_AREA, GRADE)
+  for (v in names(minmax_mss_state) %w/o% c("GRADE", "CONTENT_AREA")) {
+    minmax_mss_state[, eval(v) := round(get(v), 1)]
+  }
+
+  rgroup.indx <- unlist(lapply(unique(minmax_mss_state$CONTENT_AREA), function(f) length(minmax_mss_state[CONTENT_AREA==f, GRADE])))
+  cgroup.indx <- c(4, 2, 2)
+  cgroup.names <- c("", "Minimum", "Maximum")
+
+  minmax_mss_state[, CONTENT_AREA := gsub("ematics", "", sapply(CONTENT_AREA, capwords))]
+  minmax_mss_state[which(duplicated(CONTENT_AREA)), CONTENT_AREA := ""]
+
+  setnames(minmax_mss_state, names(minmax_mss_state)[1:4], c("Subject", "Grade", "Observed", "SD Observed"))
+  setnames(minmax_mss_state, grep("_alt", names(minmax_mss_state), value=TRUE), c("Replaced", "Replaced"))
+  setnames(minmax_mss_state, grep("DIF$", names(minmax_mss_state), value=TRUE), c("Observed-Replaced", "Observed-Replaced"))
+
+  ###  Include VERY small, transparent image to create table title and
+	knitr::include_graphics("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", dpi=NA, error = FALSE)
+
+  knitr::knit_print(
+		htmlTable::htmlTable(as.matrix(minmax_mss_state), rnames=FALSE,
+			title="", align=paste0('cc', paste(rep('r', ncol(minmax_mss_state)-2), collapse="")), # rnames = tmp.rnames,
+			tspanner=rep("", length(rgroup.indx)), n.tspanner=rgroup.indx,
+			n.cgroup=cgroup.indx, cgroup=cgroup.names,
+	    caption=Literasee::tblCap(knitr::opts_current$get("fig.cap")), css.table="min-width: 85%;"))
+```
+
+
+```{r, minmax-pctp-state, fig.cap="State-Level Percent Proficient, Before and After Replacement with Minimum and Maximum Scores.", out.width="0", out.height="0", out.extra=tab.out.ex, class = "figtab", results="asis"}
+  ###   State-Level Min/Max table: Percent Proficient
+  minmax_pctp_state <- copy(Report_Analyses[["participation"]][[tmp.assessment]][["state_minmax_diff_mean_pctp"]])
+  minmax_pctp_state <- minmax_pctp_state[, list(
+    CONTENT_AREA, GRADE, PERCENT_PROFICENT,
+    PERCENT_PROFICENT_altMIN, PERCENT_PROFICENT_minDIF, PERCENT_PROFICENT_altMAX, PERCENT_PROFICENT_maxDIF)]
+  setkey(minmax_pctp_state, CONTENT_AREA, GRADE)
+  for (v in names(minmax_pctp_state) %w/o% c("GRADE", "CONTENT_AREA")) {
+    minmax_pctp_state[, eval(v) := round(get(v), 1)]
+  }
+
+  rgroup.indx <- unlist(lapply(unique(minmax_pctp_state$CONTENT_AREA), function(f) length(minmax_pctp_state[CONTENT_AREA==f, GRADE])))
+  cgroup.indx <- c(3, 2, 2)
+  cgroup.names <- c("", "Minimum", "Maximum")
+
+  minmax_pctp_state[, CONTENT_AREA := gsub("ematics", "", sapply(CONTENT_AREA, capwords))]
+  minmax_pctp_state[which(duplicated(CONTENT_AREA)), CONTENT_AREA := ""]
+
+  setnames(minmax_pctp_state, names(minmax_pctp_state)[1:3], c("Subject", "Grade", "Observed"))
+  setnames(minmax_pctp_state, grep("_alt", names(minmax_pctp_state), value=TRUE), c("Replaced", "Replaced"))
+  setnames(minmax_pctp_state, grep("DIF$", names(minmax_pctp_state), value=TRUE), c("Observed-Replaced", "Observed-Replaced"))
+
+  ###  Include VERY small, transparent image to create table title and
+	knitr::include_graphics("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", dpi=NA, error = FALSE)
+
+  knitr::knit_print(
+		htmlTable::htmlTable(as.matrix(minmax_pctp_state), rnames=FALSE,
+			title="", align=paste0('cc', paste(rep('r', ncol(minmax_pctp_state)-2), collapse="")), # rnames = tmp.rnames,
+			tspanner=rep("", length(rgroup.indx)), n.tspanner=rgroup.indx,
+			n.cgroup=cgroup.indx, cgroup=cgroup.names,
+	    caption=Literasee::tblCap(knitr::opts_current$get("fig.cap")), css.table="min-width: 85%;"))
+```
+
+These analyses can also be extended to the school-level. Table `r tblNum(1)` below
+summarizes these differences at the school-level, for schools with more than
+fifteen students who also had at least one non-participating student.
+
+
+```{r, minmax-school-qtlss, fig.cap="School-Level Mean Scale Score Differences (Observed – Replaced) by Decile.", out.width="0", out.height="0", out.extra=tab.out.ex, class = "figtab", results="asis"}
+  ###   School Quantile Table 1 - Mean Scale Scores
+  minmax_school_qtlss <- copy(Report_Analyses[["participation"]][[tmp.assessment]][["school_minmax_diff_quantiles"]])
+  minmax_school_qtlss <- minmax_school_qtlss[variable %in% c("MEAN_SCALE_SCORE_minDIF", "MEAN_SCALE_SCORE_maxDIF")]
+  setorderv(minmax_school_qtlss, cols=c("variable", "CONTENT_AREA", "GRADE"), order = c(-1, 1, 1))
+  for (v in names(minmax_school_qtlss) %w/o% c("GRADE", "CONTENT_AREA", "variable")) {
+    minmax_school_qtlss[, eval(v) := round(get(v), 1)]
+  }
+
+  rgroup.indx <- minmax_school_qtlss[,.N, by = c("CONTENT_AREA", "variable")][, N]
+  cgroup.indx <- c(2, 9)
+  cgroup.names <- c("", "Mean Scale Scores (Observed - Replaced)")
+  tspanr.indx <- minmax_school_qtlss[,.N, by = "variable"][, N]
+  tspanr.names <- c("Missing Scores Replaced With Minimum Scale Score", "", "Missing Scores Replaced With Maximum Scale Score", "")
+  minmax_school_qtlss[, CONTENT_AREA := gsub("ematics", "", sapply(CONTENT_AREA, capwords))]
+  minmax_school_qtlss[setdiff(1:nrow(minmax_school_qtlss), c(1, 1+head(cumsum(rgroup.indx), -1))), CONTENT_AREA := ""]
+  minmax_school_qtlss[, variable := NULL]
+  setnames(minmax_school_qtlss, names(minmax_school_qtlss)[1:2], c("Subject", "Grade"))
+
+  ###  Include VERY small, transparent image to create table title and
+	knitr::include_graphics("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", dpi=NA, error = FALSE)
+
+  knitr::knit_print(
+		htmlTable::htmlTable(as.matrix(minmax_school_qtlss), rnames=FALSE,
+			title="", align=paste0('cc', paste(rep('r', ncol(minmax_school_qtlss)-2), collapse="")),
+      # n.rgroup=rgroup.indx, rgroup=rep("", length(rgroup.indx)),
+      n.tspanner=rgroup.indx, tspanner=tspanr.names, css.tspanner = "text-align: center; font-weight: 600;",
+			n.cgroup=cgroup.indx, cgroup=cgroup.names,
+	    caption=Literasee::tblCap(knitr::opts_current$get("fig.cap")), css.table="width: 100%;"))
+```
+
+
+```{r, minmax-school-qtlpctp, fig.cap="School-Level Percent Proficient Differences (Observed – Replaced) by Decile.", out.width="0", out.height="0", out.extra=tab.out.ex, class = "figtab", results="asis"}
+  ###   School Quantile Table 1 - Mean Scale Scores
+  minmax_school_qtlpctp <- copy(Report_Analyses[["participation"]][[tmp.assessment]][["school_minmax_diff_quantiles"]])
+  minmax_school_qtlpctp <- minmax_school_qtlpctp[variable %in% c("PERCENT_PROFICENT_minDIF", "PERCENT_PROFICENT_maxDIF")]
+  setorderv(minmax_school_qtlpctp, cols=c("variable", "CONTENT_AREA", "GRADE"), order = c(-1, 1, 1))
+  for (v in names(minmax_school_qtlpctp) %w/o% c("GRADE", "CONTENT_AREA", "variable")) {
+    minmax_school_qtlpctp[, eval(v) := round(get(v), 1)]
+  }
+
+  rgroup.indx <- minmax_school_qtlpctp[,.N, by = c("CONTENT_AREA", "variable")][, N]
+  cgroup.indx <- c(2, 9)
+  cgroup.names <- c("", "Percent Proficient (Observed - Replaced)")
+  tspanr.indx <- minmax_school_qtlpctp[,.N, by = "variable"][, N]
+  tspanr.names <- c("Missing Achievement Levels Replaced With Not Proficient", "", "Missing Achievement Levels Replaced With Proficient", "")
+  minmax_school_qtlpctp[, CONTENT_AREA := gsub("ematics", "", sapply(CONTENT_AREA, capwords))]
+  minmax_school_qtlpctp[setdiff(1:nrow(minmax_school_qtlpctp), c(1, 1+head(cumsum(rgroup.indx), -1))), CONTENT_AREA := ""]
+  minmax_school_qtlpctp[, variable := NULL]
+  setnames(minmax_school_qtlpctp, names(minmax_school_qtlpctp)[1:2], c("Subject", "Grade"))
+
+  ###  Include VERY small, transparent image to create table title and
+	knitr::include_graphics("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", dpi=NA, error = FALSE)
+
+  knitr::knit_print(
+		htmlTable::htmlTable(as.matrix(minmax_school_qtlpctp), rnames=FALSE,
+			title="", align=paste0('cc', paste(rep('r', ncol(minmax_school_qtlpctp)-2), collapse="")),
+      # n.rgroup=rgroup.indx, rgroup=rep("", length(rgroup.indx)),
+      n.tspanner=rgroup.indx, tspanner=tspanr.names, css.tspanner = "text-align: center; font-weight: 600;",
+			n.cgroup=cgroup.indx, cgroup=cgroup.names,
+	    caption=Literasee::tblCap(knitr::opts_current$get("fig.cap")), css.table="width: 100%;"))
+```
