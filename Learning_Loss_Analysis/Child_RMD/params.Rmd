@@ -148,16 +148,22 @@
         params$GL_camel[[assessment]] <- sapply(params$GL_subjects[[assessment]], capwords)
     }
     if (length(params$GL_subjects[[assessment]]) > 1) {
-      params$GL_text[[assessment]] <- paste(paste(head(params$GL_camel[[assessment]], -1), collapse=", "), tail(params$GL_camel[[assessment]], 1), sep=" and ")
-    } else params$GL_text[[assessment]] <- params$GL_camel[[assessment]]
+      if (is.null(params$GL_text[[assessment]]))
+        params$GL_text[[assessment]] <-
+          paste(paste(head(params$GL_camel[[assessment]], -1), collapse=", "), tail(params$GL_camel[[assessment]], 1), sep=" and ")
+    } else {
+      if (is.null(params$GL_text[[assessment]]))
+        params$GL_text[[assessment]] <- params$GL_camel[[assessment]]
+    }
 
-    if (!is.null(params$GL_text[[assessment]])) {
-      params$GL_text_long[[assessment]] <- sub("ELA", "English language arts (ELA)", params$GL_text[[assessment]]) # "English language arts (ELA) and mathematics"
-      params$GL_text_long[[assessment]] <- sub("ELP", "English language proficiency (ELP)", params$GL_text[[assessment]])
+    if (!is.null(params$GL_text[[assessment]])) {  # "English language arts (ELA) and mathematics"
+      params$GL_text_long[[assessment]] <- gsub("ELA", "English language arts (ELA)", params$GL_text[[assessment]])
+      params$GL_text_long[[assessment]] <- gsub("ELP", "English language proficiency (ELP)", params$GL_text_long[[assessment]])
     }
 
     if (is.null(params$GoF_GL_subjects[[assessment]])) {
-      params$GoF_GL_subjects[[assessment]] <- params$GL_subjects[[assessment]]
+      if (!is.null(params$gof.path[[assessment]]))
+        params$GoF_GL_subjects[[assessment]] <- params$GL_subjects[[assessment]]
     }
 
     # if (is.null(params$EOC_subjects)) {
@@ -217,13 +223,14 @@
       stop("Need to figure params$sgp.grd.subset[[assessment]] out (Utah!)")
     }
 
-    ###   Minimum School Size
-    if (is.null(params$min.size.school)) {
-      params$min.size.school <- 15
-    }
-
-    if (is.null(params$min.size.district)) {
-      params$min.size.district[[assessment]] <- 50
+    ###   Achievement levels
+    if (!is.null(params$sgp.abv[[assessment]])) {
+      if (is.null(params$achievement_levels[[assessment]])) {
+        params$achievement_levels[[assessment]] <- SGPstateData[[params$sgp.abv[[assessment]]]][["Achievement"]][["Levels"]][["Labels"]]
+      }
+      if (is.null(params$proficient_levels[[assessment]])) {
+        params$proficient_levels[[assessment]] <- SGPstateData[[params$sgp.abv[[assessment]]]][["Achievement"]][["Levels"]][["Proficient"]]
+      }
     }
 
     ###   Analysis/Documentation code repo
@@ -231,6 +238,15 @@
       if (!is.null(params$sgp.name[[assessment]]))
         params$code.url[[assessment]] <- paste0("https://github.com/CenterForAssessment/", gsub(" ", "_", params$sgp.name[[assessment]]))
     }
+  }
+
+  ###   Minimum School Size
+  if (is.null(params$min.size.school)) {
+    params$min.size.school <- 15
+  }
+
+  if (is.null(params$min.size.district)) {
+    params$min.size.district <- 50
   }
 
   ###   Clean out NULL elements
