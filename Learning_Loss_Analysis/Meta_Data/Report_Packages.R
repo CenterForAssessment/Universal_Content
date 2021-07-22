@@ -16,6 +16,7 @@ remotes::install_github("Rdatatable/data.table")
 remotes::install_github('rstudio/rmarkdown')
 remotes::install_github('rstudio/bookdown')
 remotes::install_github('rstudio/pagedown')
+remotes::install_github("GRousselet/rogme")
 
 ###   Install/update latest packages from CRAN
 
@@ -25,13 +26,13 @@ if (!require(MASS)) {
 }
 
 if (!require(randomForest)) {
-  install.packages("MASS", dep=T)
+  install.packages("randomForest", dep=T)
 }
 if (!require(caret)) {
-  install.packages("MASS", dep=T)
+  install.packages("caret", dep=T)
 }
 if (!require(inTrees)) {
-  install.packages("MASS", dep=T)
+  install.packages("inTrees", dep=T)
 }
 if (!require(modelsummary)) {
   install.packages("modelsummary", dep=T)
@@ -47,6 +48,9 @@ if (!require(reshape2)) {
 if (!require(plyr)) {
   install.packages("plyr", dep=T)
 }
+if (!require(tibble)) {
+  install.packages("tibble", dep=T)
+}
 
 #Plotting
 if (!require(GGally)) {
@@ -60,6 +64,9 @@ if (!require(plotly)) {
 }
 if (!require(vcd)) {
   install.packages("vcd", dep=T)
+}
+if (!require(VIM)) {
+  install.packages("VIM", dep=T)
 }
 
 #Tables

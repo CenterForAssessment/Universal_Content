@@ -44,17 +44,18 @@ rmd.files <- list(
         "Appendix_Participation_MinMax_Replace.Rmd"
       ),
       references = NULL
-    ),
-    G = list(
-      title = "Goodness of Fit Plots",
-      file.order = c(
-        "setup_gofit_appendix.Rmd",   #  Should be appendix specific (counter override, etc.)
-        "params.Rmd",  #  Could be appendix specific - params_gofit_appendix.Rmd
-        "Appendix_GoFit_Intro.Rmd",
-        "Appendix_GoFit_Grade_Level.Rmd"
-      ),
-      references = NULL
-    )
+    )#,
+    #  Needs to be done still
+    # G = list(
+    #   title = "Goodness of Fit Plots",
+    #   file.order = c(
+    #     "setup_gofit_appendix.Rmd",   #  Should be appendix specific (counter override, etc.)
+    #     "params.Rmd",  #  Could be appendix specific - params_gofit_appendix.Rmd
+    #     "Appendix_GoFit_Intro.Rmd",
+    #     "Appendix_GoFit_Grade_Level.Rmd"
+    #   ),
+    #   references = NULL
+    # )
   ),
   bookdown = list(
     rmd.path = file.path("assets", "rmd", "bookdown"),

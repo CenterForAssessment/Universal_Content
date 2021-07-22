@@ -122,7 +122,7 @@
       if (!is.null(Report_Data[[assessment]]))
         params$years[[assessment]] <- as.numeric(unique(Report_Data[[assessment]][, YEAR]))
     }
-    this.year <- max(params$years[[assessment]])
+    if (!is.null(params$years[[assessment]])) this.year <- max(params$years[[assessment]])
 
     if (is.null(params$sgp.max.order[[assessment]])) {
       if (!is.null(Report_Data[[assessment]])) {
@@ -186,7 +186,7 @@
     if (is.null(params$grades[[assessment]])) {
       if (!is.null(Report_Data[[assessment]]))
         params$grades[[assessment]] <-
-          unique(Report_Data[[assessment]][YEAR == this.year & !is.na(SCALE_SCORE), GRADE])
+          sort(unique(Report_Data[[assessment]][YEAR == this.year & !is.na(SCALE_SCORE), GRADE]))
     }
     if (!is.null(Report_Data[[assessment]])) {
       Grade_x_Subj <- unique(Report_Data[[assessment]][YEAR == this.year & !is.na(SCALE_SCORE) & GRADE != "EOCT", GRADE, CONTENT_AREA])
@@ -216,7 +216,7 @@
     if (is.null(params$sgp.grades[[assessment]])) {
       if (!is.null(Report_Data[[assessment]]))
         params$sgp.grades[[assessment]] <-
-          unique(Report_Data[[assessment]][YEAR == this.year & !is.na(SGP_BASELINE), GRADE])
+          sort(unique(Report_Data[[assessment]][YEAR == this.year & !is.na(SGP_BASELINE), GRADE]))
     }
 
     if (!is.null(params$grades.list[[assessment]])) {
@@ -257,5 +257,5 @@
   ##    2 - prune top-level lists
   params <- params[lengths(params) != 0]
 
-  save(params, file=file.path(params$base.directory, paste0(params$render.format, "_params.rda")))
+  save(params, file=file.path(params$base.directory, paste0("params_", params$render.format, ".rda")))
 ```
