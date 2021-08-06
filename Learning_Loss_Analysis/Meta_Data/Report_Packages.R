@@ -48,6 +48,9 @@ if (!require(reshape2)) {
 if (!require(plyr)) {
   install.packages("plyr", dep=T)
 }
+if (!require(dplyr)) {
+  install.packages("dplyr", dep=T)
+}
 if (!require(tibble)) {
   install.packages("tibble", dep=T)
 }
@@ -68,6 +71,13 @@ if (!require(vcd)) {
 if (!require(VIM)) {
   install.packages("VIM", dep=T)
 }
+if (!require(lemon)) {
+  install.packages("lemon", dep=T)
+}
+if (!require(gghighlight)) {
+  install.packages("gghighlight", dep=T)
+}
+
 
 #Tables
 if (!require(kableExtra)) {
