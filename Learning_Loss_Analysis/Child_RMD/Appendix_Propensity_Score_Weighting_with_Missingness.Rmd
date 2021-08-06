@@ -1,0 +1,1118 @@
+
+## Appendix: Propensity Score Weighting
+
+```{r param_setup}
+# Set params to mirror "Universal_Content" report
+# Once integrated into the actual report, these values will be set
+# earlier in the report configuration
+params = NULL
+params$year = unique(Report_Data$YEAR)
+params$state_name = "DEMO_STATE"
+params$GL_subjects = c("ELA", 
+                       "MATHEMATICS")
+params$GL_text = c("English language arts (ELA)", 
+                   "Mathematics")
+params$grades = sort(as.numeric(unique(Report_Data$GRADE)))
+params$min_school_size = 10
+params$nsize_supp = 15
+
+# Set params for propensity score weighting
+params.psw <- NULL
+params.psw$method <- "LR"  # Choose "LR", "NonParametric", or "MLM"
+params.psw$psw_years <- c("2019", "2021")
+params.psw$estimand <- "ATT" # Choose "ATT" or "ATE"
+params.psw$outcome <- "SCALE_SCORE"
+params.psw$stop.method <- "es.mean"
+params.psw$covfactor <- c("ETHNICITY", 
+                          "FREE_REDUCED_LUNCH_STATUS", 
+                          "ELL_STATUS", 
+                          "IEP_STATUS", 
+                          "GENDER")
+params.psw$covcontinuous <- "PRIOR_SCALE_SCORE"
+params.psw$covfull <- c(params.psw$covfactor, params.psw$covcontinuous)
+params.psw$covlevels <- c(5, 2, 2, 2, 2, 1) # Use 1 for continuous covariates
+params.psw$covnames <- c("Eth_1", 
+                         "Eth_2", 
+                         "Eth_3", 
+                         "Eth_4",
+                         "FRL", 
+                         "ELL", 
+                         "IEP", 
+                         "Male",
+                         "Prior_SS")
+params.psw$covnames_long = c("Ethnicity", 
+                             "Free and reduced lunch (FRL) status", 
+                             "English language learner (ELL) status", 
+                             "Individualized Education Program (IEP) status", 
+                             "Gender", "Prior scale score")
+params.psw$conduct.mi <- TRUE
+params.psw$MI <- list(mi.method = "2l.pan",
+                      m = 10,
+                      maxit = 30)
+
+# Number of grades
+ngrades <- length(params$grades)
+
+# Number of subject areas
+nsubject <- length(params$GL_subjects)
+```
+
+```{r markdown_setup}
+# Section will be removed when incorporated into the report
+
+# knitr options
+knitr::opts_chunk$set(cache   = FALSE, 
+                      echo    = FALSE,
+                      eval    = TRUE,
+                      message = TRUE, 
+                      warning = TRUE,
+                      results = "asis",
+                      fig.align = "center")
+
+# Load packages
+library(data.table)    # Data manipulation
+library(ggplot2)       # Graphing
+library(kableExtra)    # Pretty tables
+library(MatchIt)       # Weighted variances and effect sizes
+library(mice)          # Multiple imputation
+
+# Load method-specific packages
+if(params.psw$method == "NonParametric") {
+  
+  library(twang)   # Propensity score estimation with decision trees
+  
+}
+if(params.psw$method == "MLM") {
+  
+  library(lme4)   # Multilevel regression models
+  library(WeMix) # Fit weighted multilevel regression models
+  
+}
+
+# kable options
+options(knitr.kable.NA = '')
+
+# Load relevant functions
+source("./psw_wrapper.R")
+source("./psw_helper.R")
+```
+
+```{r data_setup}
+# Copy data table
+Report_Data_PSW = copy(Report_Data)
+
+# Prepare data for analyses
+# Long data set for each grade-level analysis
+if("PRIOR_SCALE_SCORE" %in% params.psw$covfull) {
+  
+  # Set columns to get (for current and prior years)
+  psdata.columns <- c("ID", "YEAR", "GRADE", "CONTENT_AREA", 
+                      "SCALE_SCORE", "SCHOOL_NUMBER",  
+                      params.psw$covfull[-which(params.psw$covfull == "PRIOR_SCALE_SCORE")])
+  psdata.prior.columns <- c("ID", "CONTENT_AREA", "SCALE_SCORE")
+  prior.years <- c(as.character(as.numeric(params.psw$psw_years[1]) - 1), 
+                   as.character(as.numeric(params.psw$psw_years[2]) - 1))
+  if("2020" %in% prior.years) {
+  
+      prior.years[which(prior.years == "2020")] <- "2019"
+  
+  }
+  
+  # Create empty object for storing results
+  PSW_Data <- NULL
+
+  # For-loop across grades
+  for(iGrade in 1:ngrades) {
+  
+      # Set grade level
+      g <- params$grades[iGrade]
+      
+      # Subset data for current years
+      Data_Grade <- Report_Data_PSW[VALID_CASE == "VALID_CASE" & GRADE == g & 
+                                    (YEAR == params.psw$psw_years[1] | YEAR == params.psw$psw_years[2]), 
+                                    ..psdata.columns]
+      
+      # Merge in prior scale score
+      if(g == 3) {
+        
+        Data_Grade[, PRIOR_SCALE_SCORE := NA]
+        
+      } else {
+        
+        Data_Grade_Prior <- Report_Data_PSW[VALID_CASE == "VALID_CASE" & GRADE == (g-1) & 
+                                           (YEAR == prior.years[1] | YEAR == prior.years[2]), 
+                                           ..psdata.prior.columns]
+        names(Data_Grade_Prior)[3] <- "PRIOR_SCALE_SCORE"
+        Data_Grade <- merge(Data_Grade, Data_Grade_Prior, by = c("ID", "CONTENT_AREA"), all.x = TRUE)
+        
+      }
+      
+    # Combine grade-level data to full data set
+    PSW_Data <- rbindlist(list(
+      
+        PSW_Data,
+        Data_Grade[, !c("ID")]
+      
+    ), use.names = TRUE)
+  
+  } # end for iGrade in 1:ngrades
+  
+} else {
+  
+  psdata.columns <- c("YEAR", "GRADE", "CONTENT_AREA", 
+                      "SCALE_SCORE", "SCHOOL_NUMBER",  
+                      params.psw$covfull)
+  
+  # Create empty object for storing results
+  PSW_Data <- NULL
+  
+  # For-loop across grades
+  for(iGrade in 1:ngrades) {
+  
+      # Set grade level
+      g <- params$grades[iGrade]
+      
+      # Subset data for current years
+      Data_Grade <- Report_Data_PSW[VALID_CASE == "VALID_CASE" & GRADE == g & 
+                                    (YEAR == params.psw$psw_years[1] | YEAR == params.psw$psw_years[2]), 
+                                    ..psdata.columns]
+  
+      # Combine grade-level data to full data set
+      PSW_Data <- rbindlist(list(
+        
+        PSW_Data,
+        Data_Grade
+        
+      ), use.names = TRUE)
+      
+  } # end for iGrade in 1:ngrades
+  
+} # end if/else statement for whether prior scale score is included
+
+# Convert YEAR to class "factor"
+PSW_Data[, YEAR := as.factor(YEAR)]
+
+# Remove tables to save memory
+rm(list = c("Data_Grade", "Report_Data_PSW"))
+```
+
+### Covariate Selection
+
+A propensity score quantifies the probability of group assignment conditional on a set of covariates (Rosenbaum & Rubin, 1983). These covariates include any variables that may influence the outcome. In this analysis, the group assignment is the assessment year (`r params.psw$psw_years[1]` or `r params.psw$psw_years[2]`), and the outcome is the aggregated scale score difference between years (separately for each grade).
+
+As Thoemmes and Kim (2011) write, "a propensity score analysis can only be as good as the covariates that are at the disposal of the researcher" (p. 93). To obtain accurate and generalizable propensity score estimates, all possible covariate variables should be incorporated into the propensity score weighting analysis. The following demographic characteristics and assessment data are used in the propensity score weighting analysis: `r paste(paste(head(params.psw$covnames_long, -1), collapse = ", "), tail(params$covnames_long, 1), sep = ", and ")`. 
+
+The tables below present grade-level distributions on each covariate, disaggregated across content areas, between students in `r params.psw$psw_years[1]` and `r params.psw$psw_years[2]`. The values are computed using listwise deletion for each covariate (i.e., observations with missing values on a given covariate are removed during analysis).
+
+```{r cov_table}
+# Create proportion tables between years for each grade
+Cov_Table_List <- as.list(rep(NA, nsubject))
+
+# Create grade header
+gradeheader <- dynamic_header(header.type = "Columns", 
+                              group.labels = paste0("Grade ", params$grades),
+                              num.columns = 2,
+                              group.levels = NULL)
+
+# Create row header for covariates
+covheader <- dynamic_header(header.type = "Rows", 
+                              group.labels = params.psw$covnames_long,
+                              num.columns = NULL,
+                              group.levels = params.psw$covlevels)
+
+# For-loop across subjects
+for(iSubject in 1:nsubject) {
+  
+    # Subset data for subject
+    Subject_Data_Cov <- copy(PSW_Data[CONTENT_AREA == params$GL_subjects[iSubject], ])
+    
+    # Run cov_table function
+    Cov_Table_List[[iSubject]] <- cov_table(data = Subject_Data_Cov, 
+                                            covlist = params.psw$covfull, 
+                                            covnames = params.psw$covnames_long,
+                                            grades = params$grades)
+    Cov_Table_List[[iSubject]][, 2:(ngrades*2 + 1)] <- round(Cov_Table_List[[iSubject]][, 2:(ngrades*2 + 1)], 2)
+    
+}
+
+# Print tables by subject area
+for(iSubject in 1:nsubject){
+  
+  print(kable(Cov_Table_List[[iSubject]], format = "html", 
+              booktabs = T, row.names = F, digits = 2,
+      col.names = c("Covariate", rep(c("2019", "2021"), ngrades)),
+      caption = paste0("Demographic characteristics by grade-level, ", 
+                       params$GL_text[iSubject])) %>%
+  kable_styling("stripe", full_width = T) %>%
+  add_header_above(gradeheader) %>%
+  group_rows(index = covheader))
+  
+  cat("\n", "\n", "\n")
+  
+}
+
+# Remove tables to save memory
+rm(list = c("Subject_Data_Cov"))
+```
+
+### Estimate Propensity Scores
+
+Here, the propensity scores are estimated using  `r if(params.psw$method == "LR") {"logistic regression"} else if(params.psw$method == "NonParametric") {"non-parametric decision trees with gradient boosting"} else {"multilevel modeling with students nested within schools"}` by regressing sample membership (i.e., either in year `r params.psw$psw_years[1]` or `r params.psw$psw_years[2]`) on the selected covariates. Standardized mean differences (between years) on the selected covariates are computed with and without the propensity score weights. 
+
+According to the What Works Clearinghouse (U.S. Department of Education, Institute of Education Sciences, & What Works Clearinghouse, 2013; as cited in Bishop et al., 2018, p. 358), propensity score weights fail to provide sufficient balance when the standardized mean difference between two groups on a covariate (e.g., a variable representing a demographic characteristic) exceeds a magnitude of `r if(params.psw$method == MLM) {0.10} else {0.05}`. If the mean difference is greater than this threshold but less than 0.25, the covariate should be included in the outcome model (i.e., a "doubly-robust" model).
+
+`r if(params.psw$method == "LR") {"To estimate the propensity scores, an additive model is first fit using all selected covariates. If any covariates have a standardized mean difference greater in magnitude than 0.25, then the propensity score estimation is repeated using all two-way interactions among the covariates"}`. `r if(params.psw$method == "LR" & params.psw$estimand == "ATT") paste0("The effect sizes are divided by the standard deviation for the sample of students who tested in ", params.psw$psw_years[1], " (Ho et al., 2011)") else if(params.psw$method == "LR" & params.psw$estimand == "ATE") {"The effect sizes are divided by the pooled standard deviation (Ho et al., 2011)"}`. 
+
+`r if(params.psw$method == "NonParametric") {"A gradient boosting decision tree method is used to fit the model using the twang R package (Cefalu et al., 2021). This method automatically considers interactions among the covariates when selecting the best model."}`
+
+`r if(params.psw$method == "MLM") {"The propensity scores are estimated using a two-level model that accounts for the grouping of students within schools. This grouping structure can introduce dependencies into the data. A multilevel modeling approach to estimate propensity scores can help account for those dependencies. In this estimation model, a random intercept is introduced at the school level. Effect sizes are standardized using the weighted standard deviation of the full sample (Leite et al., 2015)."}`
+
+`r if(params.psw$conduct.mi) {paste0("Due to the presence of missing data, multiple imputation is first conducted to create ", params.psw$MI$m, " imputed data sets. Within each data set, propensity scores are estimated and corresponding weights are computed (Cham & West, 2016; Granger et al., 2019)."}`
+
+```{r psw_estimate_nomiss, eval = !params.psw$conduct.mi}
+# Compute propensity scores for each grade and content area
+# First allocate memory:
+#   PSW: List of data.tables by subject that combines propensity scores and weights with full data
+#   estable: List of tables by subject with standardized effect sizes (with and without weighting)
+PSW.output <- as.list(rep(NA, nsubject))
+estable.output <- as.list(rep(NA, nsubject))
+
+# If using gradient boosting, allocate memory to save convergence plots
+if(params.psw$method == "NonParametric") {
+  
+  convgplot.output <- as.list(rep(NA, nsubject))
+  
+}
+
+# Set PS estimation method
+switch(params.psw$method, 
+       "LR" = { psmethod <- "logistic" }, 
+       "NonParametric" = { psmethod <- "gradient" },
+       "MLM" = { psmethod <- "hierarchical" })
+
+# Set PS thresholds for categorizing standardized mean differences
+psthresholds <- if(params.psw$method == "MLM") c(0.1, 0.25) else c(0.05, 0.25)
+
+# Create year variable after re-leveling year factor (so that latter year scores are adjusted)
+YEARVAR <- paste0("YEAR", params.psw$psw_years[1])
+
+# For-loop across subjects
+for(iSubject in 1:nsubject) {
+
+  # Subset data for subject area
+  Subject_Data <- copy(PSW_Data[CONTENT_AREA == params$GL_subjects[iSubject],])
+
+  # Relevel year so that latter year scores are adjusted
+  # E.g., in factor variable, 2021 = 0 and 2019 = 1
+  Subject_Data$YEAR <- relevel(Subject_Data$YEAR, params.psw$psw_years[2])
+
+  # Allocate memory to save across grades
+  psdata <- NULL; estable <- NULL
+  drcov.vec <- rep(NA, ngrades); unbalancedcov.vec <- rep(NA, ngrades)
+  cplot <- if(params.psw$method == "NonParametric") as.list(rep(NA, ngrades)) else NULL
+
+  # Dynamically create model formula for model matrix (using factor covariates)
+  mm.formula <- paste("~ YEAR", paste(params.psw$covfactor, collapse = " + "), sep = " + ")
+
+  # For-loop across grades
+  for(iGrade in 1:ngrades) {
+
+    # Subset grade data
+    g <- params$grades[iGrade]
+    Grade_Data <- copy(Subject_Data[GRADE == g, !c("CONTENT_AREA")])
+
+    # Create model matrix data frame that dummy-codes categorical covariates
+    if(!is.null(params.psw$covcontinuous)) {
+      
+      Grade_Data_MM <- data.frame(model.matrix(as.formula(mm.formula), data = Grade_Data)[,-1],
+                                  Grade_Data[, eval(parse(text = params.psw$covcontinuous))], 
+                                  Grade_Data$SCHOOL_NUMBER, 
+                                  Grade_Data$SCALE_SCORE, 
+                                  Grade_Data$GRADE)
+      
+    } else {
+      
+       Grade_Data_MM <- data.frame(model.matrix(as.formula(mm.formula), data = Grade_Data)[,-1],
+                                  Grade_Data$SCHOOL_NUMBER, 
+                                  Grade_Data$SCALE_SCORE, 
+                                  Grade_Data$GRADE)
+      
+    }
+    names(Grade_Data_MM) <- c(YEARVAR, 
+                              params.psw$covnames, 
+                              "SCHOOL_NUMBER", "SCALE_SCORE", "GRADE")
+    
+    # Dynamically create model formula for estimating propensity scores
+    if(("PRIOR_SCALE_SCORE" %in% params.psw$covfull) & (g == 3)) {
+      
+        ps.formula <- paste(paste0(YEARVAR, " ~ "), paste(params.psw$covnames[-which(params.psw$covnames == "Prior_SS")], 
+                                                          collapse = " + "))
+      
+    } else {
+      
+        ps.formula <- paste(paste0(YEARVAR, " ~ "), paste(params.psw$covnames, collapse = " + "))
+          
+    }
+  
+    # Run psw_wrapper function
+    ps.out <- psw_wrapper(psformula = ps.formula, 
+                          data = Grade_Data_MM, 
+                          method = psmethod, 
+                          estimand = params.psw$estimand,
+                          thresholds = psthresholds,
+                          twangStop = params.psw$stop.method)
+
+    # Append propensity scores to grade-level data
+    Grade_Data_MM$PS <- ps.out$PS
+
+    # Append propensity score weights to grade-level data
+    Grade_Data_MM$PSWEIGHTS <- ps.out$PSWeights
+    
+    # Save convergence plots (if using twang)
+    if(params.psw$method == "NonParametric") {
+      
+      cplot[[iGrade]] <- plot(ps.out$ModObject, 
+                              main = paste0(params$GL_text[iSubject],
+                                            paste0(", Grade ", params$grades[iGrade])))
+      
+    }
+
+    # Append grade-level data to full data.table
+    psdata <- rbindlist(list(psdata, as.data.table(Grade_Data_MM)))
+
+    # Add effect sizes by covariate to full estable
+    if(("PRIOR_SCALE_SCORE" %in% params.psw$covfull) & (g == 3)) {
+      
+        ps.out$ES <- rbind(ps.out$ES, c(NA, NA))
+      
+    }
+    estable <- cbind(estable, ps.out$ES)
+    
+    # Save covariates per grade level for doubly robust model
+    # Have weighted effect sizes between bounds of psthresholds
+    drcov.vec[iGrade] <- ps.out$DoublyRobust
+
+    # Save covariates per grade level with weighted effect sizes
+    # greater than the upper bound of psthresholds
+    unbalancedcov.vec[iGrade] <- ps.out$UnbalancedCov
+
+  }
+
+  # Add subject-level results to full lists
+  PSW.output[[iSubject]] <- psdata
+  estable.output[[iSubject]] <- list(estable, drcov.vec, unbalancedcov.vec)
+  if(params.psw$method == "NonParametric") {
+      
+      convgplot.output[[iSubject]] <- cplot
+      
+    }
+
+}
+
+# Print tables by subject area
+for(iSubject in 1:nsubject) {
+
+  print(kable(cbind(params.psw$covnames, round(estable.output[[iSubject]][[1]], 3)), 
+              format = "html", booktabs = T, row.names = F, 
+              digits = 2, align = c("l", rep("r", ngrades*2)),
+      col.names = c("Covariate", rep(c("Unweighted", "Weighted"), ngrades)),
+      caption = paste0("Standardized effect sizes with and without weighting by grade-level, ",
+                       params$GL_text[iSubject])) %>%
+  kable_styling("stripe", full_width = T) %>%
+  add_header_above(gradeheader) %>%
+  scroll_box(width = "900px"))
+
+  cat("\n", "\n", "\n")
+
+}
+
+# If using twang, print convergence plots
+if(params.psw$method == "NonParametric") {
+  
+    for(iSubject in 1:nsubject){
+    
+      for(iGrade in 1:ngrades) {
+    
+          print(convgplot.output[[iSubject]][[iGrade]])
+    
+          cat("\n", "\n", "\n")
+    
+      }
+    
+    }
+  
+}
+
+# Remove tables to save memory
+rm(list = c("Grade_Data_MM", "Grade_Data", "Subject_Data", "ps.out"))
+```
+
+```{r psw_estimate_missing, eval = params.psw$conduct.mi}
+# Run multiple imputation to create M imputed data sets
+psw.imp <- mice(PSW_Data, 
+                method = params.psw$MI$mi.method,
+                m = params.psw$MI$m,
+                maxit = params.psw$MI$maxit,
+                print = FALSE)
+
+# Allocate memory to save results across imputed data sets
+PSW.imputed <- as.list(rep(NA, params.psw$MI$m))
+estable.imputed <- as.list(rep(NA, params.psw$MI$m))
+
+# If using gradient boosting, allocate memory to save convergence plots
+if(params.psw$method == "NonParametric") {
+    
+    convgplot.imputed <- as.list(rep(NA, params.psw$MI$n))
+    
+}
+
+
+# Set PS estimation method
+switch(params.psw$method, 
+       "LR" = { psmethod <- "logistic" }, 
+       "NonParametric" = { psmethod <- "gradient" },
+       "MLM" = { psmethod <- "hierarchical" })
+
+# Set PS thresholds for categorizing standardized mean differences
+psthresholds <- if(params.psw$method == "MLM") c(0.1, 0.25) else c(0.05, 0.25)
+
+# Create year variable after re-leveling year factor (so that latter year scores are adjusted)
+YEARVAR <- paste0("YEAR", params.psw$psw_years[1])
+
+# For-loop across imputed data sets
+for(iImputed in 1:params.psw$MI$m) {
+  
+  # Extract imputed data set
+  PSW_Imp <- as.data.table(complete(psw.imp, iImputed))
+  
+  # First allocate memory:
+  PSW.output <- as.list(rep(NA, nsubject))
+  estable.output <- as.list(rep(NA, nsubject))
+  
+  # If using gradient boosting, allocate memory to save convergence plots
+  if(params.psw$method == "NonParametric") {
+    
+    convgplot.output <- as.list(rep(NA, nsubject))
+    
+  }
+  
+  # For-loop across subjects
+  for(iSubject in 1:nsubject) {
+  
+    # Subset data for subject area
+    Subject_Data <- copy(PSW_Imp[CONTENT_AREA == params$GL_subjects[iSubject],])
+  
+    # Relevel year so that latter year scores are adjusted
+    # E.g., in factor variable, 2021 = 0 and 2019 = 1
+    Subject_Data$YEAR <- relevel(Subject_Data$YEAR, params.psw$psw_years[2])
+  
+    # Allocate memory to save across grades
+    psdata <- NULL; estable <- NULL
+    drcov.vec <- rep(NA, ngrades); unbalancedcov.vec <- rep(NA, ngrades)
+    drcov.num.vec <- rep(NA, ngrades); unbalancedcov.num.vec <- rep(NA, ngrades)
+    cplot <- if(params.psw$method == "NonParametric") as.list(rep(NA, ngrades)) else NULL
+  
+    # Dynamically create model formula for model matrix (using factor covariates)
+    mm.formula <- paste("~ YEAR", paste(params.psw$covfactor, collapse = " + "), sep = " + ")
+  
+    # For-loop across grades
+    for(iGrade in 1:ngrades) {
+  
+      # Subset grade data
+      g <- params$grades[iGrade]
+      Grade_Data <- copy(Subject_Data[GRADE == g, !c("CONTENT_AREA")])
+  
+      # Create model matrix data frame that dummy-codes categorical covariates
+      if(!is.null(params.psw$covcontinuous)) {
+        
+        Grade_Data_MM <- data.frame(model.matrix(as.formula(mm.formula), data = Grade_Data)[,-1],
+                                    Grade_Data[, eval(parse(text = params.psw$covcontinuous))], 
+                                    Grade_Data$SCHOOL_NUMBER, 
+                                    Grade_Data$SCALE_SCORE, 
+                                    Grade_Data$GRADE)
+        
+      } else {
+        
+         Grade_Data_MM <- data.frame(model.matrix(as.formula(mm.formula), data = Grade_Data)[,-1],
+                                    Grade_Data$SCHOOL_NUMBER, 
+                                    Grade_Data$SCALE_SCORE, 
+                                    Grade_Data$GRADE)
+        
+      }
+      names(Grade_Data_MM) <- c(YEARVAR, 
+                                params.psw$covnames, 
+                                "SCHOOL_NUMBER", "SCALE_SCORE", "GRADE")
+      
+      # Dynamically create model formula for estimating propensity scores
+      if(("PRIOR_SCALE_SCORE" %in% params.psw$covfull) & (g == 3)) {
+        
+          ps.formula <- paste(paste0(YEARVAR, " ~ "), paste(params.psw$covnames[-which(params.psw$covnames == "Prior_SS")], 
+                                                            collapse = " + "))
+        
+      } else {
+        
+          ps.formula <- paste(paste0(YEARVAR, " ~ "), paste(params.psw$covnames, collapse = " + "))
+            
+      }
+    
+      # Run psw_wrapper function
+      ps.out <- psw_wrapper(psformula = ps.formula, 
+                            data = Grade_Data_MM, 
+                            method = psmethod, 
+                            estimand = params.psw$estimand,
+                            thresholds = psthresholds,
+                            twangStop = params.psw$stop.method)
+  
+      # Append propensity scores to grade-level data
+      Grade_Data_MM$PS <- ps.out$PS
+  
+      # Append propensity score weights to grade-level data
+      Grade_Data_MM$PSWEIGHTS <- ps.out$PSWeights
+      
+      # Save convergence plots (if using twang)
+      if(params.psw$method == "NonParametric") {
+        
+        cplot[[iGrade]] <- plot(ps.out$ModObject, 
+                                main = paste0(params$GL_text[iSubject],
+                                              paste0(", Grade ", params$grades[iGrade])))
+        
+      }
+  
+      # Append grade-level data to full data.table
+      psdata <- rbindlist(list(psdata, as.data.table(Grade_Data_MM)))
+  
+      # Add effect sizes by covariate to full estable
+      if(("PRIOR_SCALE_SCORE" %in% params.psw$covfull) & (g == 3)) {
+        
+          ps.out$ES <- rbind(ps.out$ES, c(NA, NA))
+        
+      }
+      estable <- cbind(estable, ps.out$ES)
+      
+      # Save covariates per grade level for doubly robust model
+      # Have weighted effect sizes between bounds of psthresholds
+      drcov.vec[iGrade] <- ps.out$DoublyRobust
+      drcov.num.vec[iGrade] <- ps.out$NumDoublyRobust
+  
+      # Save covariates per grade level with weighted effect sizes
+      # greater than the upper bound of psthresholds
+      unbalancedcov.vec[iGrade] <- ps.out$UnbalancedCov
+      unbalancedcov.num.vec[iGrade] <- ps.out$NumUnbalanced
+  
+    }
+  
+    # Add subject-level results to full lists
+    PSW.output[[iSubject]] <- psdata
+    estable.output[[iSubject]] <- list(estable, 
+                                       drcov.vec, unbalancedcov.vec, 
+                                       drcov.num.vec, unbalancedcov.num.vec)
+    if(params.psw$method == "NonParametric") {
+        
+        convgplot.output[[iSubject]] <- cplot
+        
+      }
+  
+  }
+    
+  # Save results for imputed data set
+  PSW.imputed[[iImputed]] <- PSW.output
+  estable.imputed[[iImputed]] <- estable.output
+  if(params.psw$method == "NonParametric") {
+    
+    convgplot.imputed[[iImputed]] <- convgplot.output
+    
+  }
+
+}
+
+# Table of descriptive statistics for effect sizes across imputed data sets
+for(iSubject in 1:nsubject) {
+  
+  # Create array of tables
+  estab <- array(NA, dim = c(length(params.psw$covnames), 
+                             ngrades*2, 
+                             params.psw$MI$m))
+  for(iImp in 1:params.psw$MI$m) {
+    
+    estab[,, iImp] <- round(estable.imputed[[iImp]][[iSubject]][[1]], 3)
+    
+  }
+  
+  # Create table
+  es.mean <- cbind(
+    
+    # Covariate names
+    params.psw$covnames,
+    
+    # Mean effect sizes with and without weighting
+    apply(estab, 1:2, mean)
+    
+  )
+  
+  # Print table
+  print(kable(es.mean, 
+              format = "html", booktabs = T, row.names = F, 
+              digits = 2, align = c("l", rep("r", ngrades*2)),
+      col.names = c("Covariate", rep(c("Unweighted", "Weighted"), ngrades)),
+      caption = paste0("Standardized effect sizes with and without weighting, averaged across imputed data sets, ",
+                       params$GL_text[iSubject])) %>%
+  kable_styling("stripe", full_width = T) %>%
+  add_header_above(gradeheader) %>%
+  scroll_box(width = "900px"))
+
+  cat("\n", "\n", "\n")
+
+}
+
+# Remove tables to save memory
+rm(list = c("Grade_Data_MM", "Grade_Data", "Subject_Data", "ps.out"))
+```
+
+`r if(!params.psw$conduct.mi) {Using the standardized effect size thresholds described above, the covariates by grade and subject level that (a) should be included in a doubly-robust model or (b) are unbalanced after inverse weighting are presented below.}`
+
+```{r psw_unbalanced_nomiss, eval = !params.psw$conduct.mi}
+# Create table of the number of unbalanced covariates by grade and content area
+unbalancedcov.table <- NULL
+
+# Create header by subject area
+subjectheader <- dynamic_header(header.type = "Columns", 
+                                group.labels = params$GL_text,
+                                num.columns = 2,
+                                group.levels = NULL)
+
+# For-loop across subjects
+for(iSubject in 1:nsubject) {
+
+  # Combine number of unbalanced variables by subject area
+  unbalancedcov.table <- cbind(unbalancedcov.table, 
+                               estable.output[[iSubject]][[2]],
+                               estable.output[[iSubject]][[3]])
+
+}
+
+# Print table
+kable(cbind(paste("Grade ", params$grades), unbalancedcov.table), format = "html",
+      booktabs = T, row.names = F, digits = 2,
+      col.names = c("Grade", rep(c("Doubly-Robust Covariates", "Unbalanced Covariates"), nsubject)),
+      caption = "Unbalanced covariates after weighting with propensity scores") %>%
+  kable_styling("stripe", full_width = F) %>%
+  add_header_above(subjectheader)
+```
+
+`r if(params.psw$conduct.mi) {Using the standardized effect size thresholds described above, the mean and median number of covariates by grade and subject level that (a) should be included in a doubly-robust model or (b) are unbalanced after inverse weighting are presented below. These descriptive statistics are computed across all imputed data sets.}`
+
+```{r psw_unbalanced_missing, eval = params.psw$conduct.mi}
+# Create table of the number of unbalanced covariates by grade and content area
+unbalancedcov.table <- NULL
+
+# Create header by subject area
+subjectheader <- dynamic_header(header.type = "Columns", 
+                                group.labels = params$GL_text,
+                                num.columns = 4,
+                                group.levels = NULL)
+
+# For-loop across subjects
+for(iSubject in 1:nsubject) {
+  
+  # Create array of vectors 
+  unbalanced.array <- array(NA, dim = c(ngrades, 
+                                        2, 
+                                        params.psw$MI$m))
+  
+  # For-loop across imputed data sets
+  for(iImp in 1:params.psw$MI$m) {
+    
+    # Extract number of unbalanced covariates for imputed data set
+    unbalanced.array[, 1, iImp] <- estable.imputed[[iImp]][[iSubject]][[4]]
+    unbalanced.array[, 2, iImp] <- estable.imputed[[iImp]][[iSubject]][[5]]
+    
+    
+  }
+  
+  # Create table
+  unbalanced.tab <- cbind(
+    
+    # Mean number of doubly-robust covariates
+    apply(unbalanced.array[,1,], 1, mean),
+    
+    # Median number of doubly-robust covariates
+    apply(unbalanced.array[,1,], 1, median),
+    
+    # Mean number of unbalanced covariates
+    apply(unbalanced.array[,2,], 1, mean),
+    
+    # Median number of unbalanced covariates
+    apply(unbalanced.array[,2,], 1, median)
+    
+  )
+
+  # Combine number of unbalanced variables by subject area
+  unbalancedcov.table <- cbind(unbalancedcov.table, 
+                               unbalanced.tab)
+
+}
+
+# Print table
+kable(cbind(paste("Grade ", params$grades), unbalancedcov.table), format = "html",
+      booktabs = T, row.names = F, digits = 2,
+      col.names = c("Grade", rep(c("Mean Number Doubly-Robust", "Median Number Doubly-Robust",
+                                   "Mean Number Unbalanced", "Median Number Unbalanced"), nsubject)),
+      caption = "Mean and median unbalanced covariates after weighting with propensity scores, computed across imputed data sets") %>%
+  kable_styling("stripe", full_width = F) %>%
+  add_header_above(subjectheader)
+```
+
+`r if(!params.psw$conduct.mi) {The tables below present characteristics of the propensity scores and propensity score weights by grade, including the common support region and proportion of "extreme" scores (i.e., propensity scores equal to zero or one). Additionally, overlapping histograms are included to show the degree of overlap for the propensity scores.}`
+
+```{r psw_commonsupport_nomiss, eval = !params.psw$conduct.mi}
+# Create expanded grade header
+gradeheaderfull <- dynamic_header(header.type = "Columns", 
+                                  group.labels = paste0("Grade ", params$grades[iGrade]),
+                                  num.columns = 4,
+                                  group.levels = NULL)
+
+# Table of propensity score ranges, range of common support, and
+# percentage of students in common support area
+# For-loop across subject areas
+for(iSubject in 1:nsubject) {
+  
+  # Run common support wrapper function
+  cs.out <- psw_commonsupport(data = PSW.output[[iSubject]], 
+                              grades = params$grades,
+                              groupvar = YEARVAR)
+
+  # Print score range table
+  print(kable(cs.out$PSrange, format = "html",
+              booktabs = T, row.names = F, digits = 2,
+      col.names = c("Year", 
+                    rep(c("Min", "Max", "Proportion PS = 0", "Proportion PS = 1"), ngrades)),
+      caption = paste0("Propensity score characteristics by year and grade, ",
+                       params$GL_text[iSubject])) %>%
+  kable_styling("stripe", full_width = T) %>%
+  add_header_above(gradeheaderfull) %>%
+  scroll_box(width = "900px"))
+
+  cat("\n", "\n", "\n")
+
+  # Print weight range table
+  print(kable(cs.out$PSWrange, format = "html",
+              booktabs = T, row.names = F, digits = 2,
+      col.names = c("Year", 
+                    rep(c("Min", "Max", "Original Sample Size", "Effective Sample Size"), ngrades)),
+      caption = paste0("Propensity score weight characteristics by year and grade, ",
+                       params$GL_text[iSubject])) %>%
+  kable_styling("stripe", full_width = T) %>%
+  add_header_above(gradeheaderfull) %>%
+  scroll_box(width = "900px"))
+
+  cat("\n", "\n", "\n")
+
+  # Print common support table
+  print(kable(cs.out$CommonSupport, format = "html",
+              booktabs = T, row.names = F, digits = 2,
+      col.names = c("Grade", "Minimum", "Maximum", "Percentage in Common Support"),
+      caption = paste0("Range and percentage of students within the area of common support by grade, ",
+                       params$GL_text[iSubject])) %>%
+  kable_styling("stripe", full_width = F))
+
+  cat("\n", "\n", "\n")
+
+}
+
+# Overlapping histograms of propensity scores
+# Facet by grade
+for(iSubject in 1:nsubject) {
+
+  print(
+    PSW.output[[iSubject]] %>%
+      ggplot(aes(x = PS, fill = as.factor(eval(parse(text = YEARVAR))))) +
+        geom_density(alpha = 0.5) +
+        facet_wrap(~factor(GRADE, labels = paste0("Grade ", params$grades))) +
+        labs(x = "Propensity Score", y = "Density", fill = "Sample") +
+        ggtitle(paste0("Propensity score overlap by grade, ", 
+                       params$GL_text[iSubject]))
+    )
+
+}
+```
+
+`r if(params.psw$conduct.mi) {The tables below present characteristics of the propensity scores and propensity score weights by grade, including the common support region and proportion of "extreme" scores (i.e., propensity scores equal to zero or one). Given that the propensity scores and weights are computed in each imputed data set, the results below are summarized across the imputations.}`
+
+```{r psw_commonsupport_nomiss, eval = !params.psw$conduct.mi}
+# Create expanded grade header
+gradeheaderfull <- dynamic_header(header.type = "Columns", 
+                                  group.labels = paste0("Grade ", params$grades[iGrade]),
+                                  num.columns = 4,
+                                  group.levels = NULL)
+
+# Table of propensity score ranges, range of common support, and
+# percentage of students in common support area
+# For-loop across subject areas
+for(iSubject in 1:nsubject) {
+  
+  # Allocate memory to save results across imputations
+  psrange.imp <- array(NA, dim = c(2, (1 + ngrades*4), params.psw$MI$m))
+  pswrange.imp <- array(NA, dim = c(2, (1 + ngrades*4), params.psw$MI$m))
+  csrange.imp <- array(NA, dim = c(ngrades, 4, params.psw$MI$m))
+
+  # Run common support wrapper function for each imputation
+  for(iImp in 1:params.psw$MI$m) {
+     
+     cs.out <- psw_commonsupport(data = PSW.imputed[[iImp]][[iSubject]], 
+                                 grades = params$grades,
+                                 groupvar = YEARVAR)
+     psrange.imp[,,iImp] <- as.matrix(cs.out$PSrange)
+     pswrange.imp[,,iImp] <- as.matrix(cs.out$PSWrange)
+     csrange.imp[,,iImp] <- as.matrix(cs.out$CommonSupport)
+     
+   } 
+
+  # Print score range table, averaged across imputations
+  print(kable(apply(psrange.imp, 1:2, mean), format = "html",
+              booktabs = T, row.names = F, digits = 2,
+      col.names = c("Year", 
+                    rep(c("Min", "Max", "Proportion PS = 0", "Proportion PS = 1"), ngrades)),
+      caption = paste0("Propensity score characteristics by year and grade, averaged across imputed data sets, ",
+                       params$GL_text[iSubject])) %>%
+  kable_styling("stripe", full_width = T) %>%
+  add_header_above(gradeheaderfull) %>%
+  scroll_box(width = "900px"))
+
+  cat("\n", "\n", "\n")
+
+  # Print weight range table
+  print(kable(apply(pswrange.imp, 1:2, mean), format = "html",
+              booktabs = T, row.names = F, digits = 2,
+      col.names = c("Year", 
+                    rep(c("Min", "Max", "Original Sample Size", "Effective Sample Size"), ngrades)),
+      caption = paste0("Propensity score weight characteristics by year and grade, averaged across imputed data sets, ",
+                       params$GL_text[iSubject])) %>%
+  kable_styling("stripe", full_width = T) %>%
+  add_header_above(gradeheaderfull) %>%
+  scroll_box(width = "900px"))
+
+  cat("\n", "\n", "\n")
+
+  # Print common support table
+  print(kable(apply(csrange.imp, 1:2, mean), format = "html",
+              booktabs = T, row.names = F, digits = 2,
+      col.names = c("Grade", "Minimum", "Maximum", "Percentage in Common Support"),
+      caption = paste0("Range and percentage of students within the area of common support by grade, averaged across imputed data sets, ",
+                       params$GL_text[iSubject])) %>%
+  kable_styling("stripe", full_width = F))
+
+  cat("\n", "\n", "\n")
+
+}
+```
+
+### Weighted Analysis
+
+The analyses below use the propensity score weights calculated above to calculate the estimated mean `r if(params.psw$outcome == "SCALE_SCORE") "scale score" else "SGP"` differences, disaggregated by grade and content area. The estimated mean `r if(params.psw$outcome == "SCALE_SCORE") "scale score" else "SGP"` differences are presented with and without weighting. Any covariates with effect sizes greater in magnitude than `r if(params.psw$method == MLM) {0.10} else {0.05}` are included to create a "doubly-robust" model. The mean differences are estimated as the `r params.psw$psw_years[1]` mean `r if(params.psw$outcome == "SCALE_SCORE") "scale scores" else "SGP"`, minus the `r params.psw$psw_years[2]` mean `r if(params.psw$outcome == "SCALE_SCORE") "scale scores" else "SGP"`.
+
+`r if(params.psw$conduct.mi) {"To calculate the estimated mean differences across the imputed data sets, the Within approach described by Granger et al. (2019) is implemented. Specifically, the estimated mean differences are calculated within each imputed data set. Then, these estimates are pooled across the imputations."}`
+
+```{r psw_analysis_nomiss, eval = !params.psw$conduct.mi}
+# Set analysis type
+atype <- if(params.psw$method == "MLM") "hierarchical" else "non-hierarchical"
+
+# If a hierarchical analysis, specify random effects
+rvar <- if(params.psw$method == "MLM") "SCHOOL_NUMBER" else NULL
+
+# Allocate memory to save estimated differences
+Diff_List <- as.list(rep(NA, nsubject))
+
+# For-loop across subject areas
+for(iSubject in 1:nsubject) {
+
+  # Subset data with propensity score weights
+  Subject_Data <- PSW.output[[iSubject]]
+  
+  # Subset "doubly-robust" and "unbalanced" covariates
+  Cov_DoublyRobust <- estable.output[[iSubject]][[2]]
+  Cov_Unbalanced<- estable.output[[iSubject]][[3]]
+
+  # Allocate vectors to save estimated differences
+  est.unweighted <- est.weighted <- rep(NA, ngrades)
+
+  # For-loop across grades
+  for(iGrade in 1:ngrades) {
+    
+    # Set grade
+    g <- params$grades[iGrade]
+
+    # Subset grade-level data
+    Grade_Data <- Subject_Data[GRADE == g, ]
+    
+    # Subset grade-level covariate vectors
+    DR_Var <- Cov_DoublyRobust[iGrade] 
+    Unbal_Var <- Cov_Unbalanced[iGrade]
+    
+    # Identify covariates to include in the model
+    covlist <- NULL
+    if(DR_Var != "None") {
+      
+      covlist <- strsplit(DR_Var, ", ")[[1]]
+      
+    }
+    if(Unbal_Var != "None") {
+      
+      covlist <- c(covlist, strsplit(Unbal_Var, ", "))[[1]]
+      
+    }
+
+    # Run analysis
+    fit.output <- psw_analysis(data = Grade_Data, 
+                               outcome = params.psw$outcome,
+                               group = YEARVAR,
+                               cov.include = covlist,
+                               w = Grade_Data$PSWEIGHTS, 
+                               type = atype,
+                               random.var = rvar)
+    
+    # Save estimated mean scale score differences
+    est.unweighted[iGrade] <- fit$Unweighted
+    est.weighted[iGrade] <- fit$Weighted
+
+  }
+
+  # Save information by subject
+  Diff_List[[iSubject]] <- round(cbind(est.unweighted, est.weighted), 3)
+
+}
+
+# Combine estimated difference tables
+difftable <- paste0("Grade ", params$grades)
+for(iSubject in 1:nsubject) {
+
+  difftable <- cbind(difftable, Diff_List[[iSubject]])
+
+}
+
+# Print table of estimated differences with and without weights
+kable(difftable, format = "html", booktabs = T, 
+      row.names = F, digits = 2, align = c("l", rep("r", nsubject*2)),
+      col.names = c("Grade", rep(c("Unweighted", "Weighted"), nsubject)),
+      caption = "Estimated mean differences with and without incorporating propensity score weights") %>%
+  kable_styling("stripe", full_width = T) %>%
+  add_header_above(subjectheader)
+
+# Remove tables to save memory
+rm(list = c("Grade_Data", "Subject_Data"))
+```
+
+```{r psw_analysis_missing, eval = params.psw$conduct.mi}
+# Create header by subject area
+subjectheaderfull <- dynamic_header(header.type = "Columns", 
+                                    group.labels = params$GL_text,
+                                    num.columns = 4,
+                                    group.levels = NULL)
+
+# Set analysis type
+atype <- if(params.psw$method == "MLM") "hierarchical" else "non-hierarchical"
+
+# If a hierarchical analysis, specify random effects
+rvar <- if(params.psw$method == "MLM") "SCHOOL_NUMBER" else NULL
+
+# Allocate memory to save estimated differences
+Diff_List <- as.list(rep(NA, nsubject))
+
+# For-loop across subject areas
+for(iSubject in 1:nsubject) {
+  
+  # Allocate vectors for saving pooled estimates
+  est.pooled.unweighted <- est.pooled.weighted <- rep(NA, ngrades)
+  se.pooled.unweighted <- se.pooled.weighted <- rep(NA, ngrades)
+  
+  # For-loop across grades
+  for(iGrade in 1:ngrades) {
+    
+    # Set grade
+    g <- params$grades[iGrade]
+    
+    # Allocate list for saving models across imputations
+    est.imputed.unweighted <- est.imputed.weighted <- as.list(rep(NA, params.psw$MI$m))
+    
+    # For-loop across imputations
+    for(iImp in 1:params.psw$MI$m) {
+      
+       # Subset grade-level data
+       Grade_Data <- PSW.imputed[[iImp]][[iSubject]][GRADE == g, ]
+    
+       # Subset grade-level covariate vectors
+       DR_Var <- estable.imputed[[iImp]][[iSubject]][[2]][iGrade] 
+       Unbal_Var <-  estable.imputed[[iImp]][[iSubject]][[3]][iGrade] 
+      
+       # Identify covariates to include in the model
+       covlist <- NULL
+       if(DR_Var != "None") {
+        
+         covlist <- strsplit(DR_Var, ", ")[[1]]
+        
+       }
+       if(Unbal_Var != "None") {
+        
+         covlist <- c(covlist, strsplit(Unbal_Var, ", "))[[1]]
+        
+       }
+      
+      # Run analysis
+      fit.output <- psw_analysis(data = Grade_Data, 
+                                 outcome = params.psw$outcome,
+                                 group = YEARVAR,
+                                 cov.include = covlist,
+                                 w = Grade_Data$PSWEIGHTS, 
+                                 type = atype,
+                                 random.var = rvar)
+      
+      # Save estimated mean scale score differences
+      est.imputed.unweighted[[iImp]] <- fit$ModUnweighted
+      est.imputed.weighted[[iImp]] <- fit$ModWeighted
+      
+    }
+    
+    # Pool estimates
+    fit.pooled.unweighted <- pool(est.imputed.weighted)
+    fit.pooled.weighted <- pool(est.imputed.weighted)
+    
+    # Save pooled estimates for grade
+    
+  }
+  
+  # Save information by subject
+  Diff_List[[iSubject]] <- round(cbind(est.pooled.unweighted, se.pooled.unweighted,
+                                       est.pooled.weighted, se.pooled.weighted), 3)
+
+}
+
+# Combine estimated difference tables
+difftable <- paste0("Grade ", params$grades)
+for(iSubject in 1:nsubject) {
+
+  difftable <- cbind(difftable, Diff_List[[iSubject]])
+
+}
+
+# Print table of estimated differences with and without weights
+kable(difftable, format = "html", booktabs = T, 
+      row.names = F, digits = 2, align = c("l", rep("r", nsubject*2)),
+      col.names = c("Grade", rep(c("Unweighted Estimate", "Unweighted SE", "Weighted Estimate", "Weighted SE"), nsubject)),
+      caption = "Estimated mean differences with and without incorporating propensity score weights, pooled across multiple imputed data sets") %>%
+  kable_styling("stripe", full_width = T) %>%
+  add_header_above(subjectheaderfull)
+
+# Remove tables to save memory
+rm(list = c("Grade_Data", "Subject_Data"))
+```
+
+### References
+
+- Cefalu, M., Ridgeway, G., McCaffrey, D., Morral, A., Griffin, B. A., & Burgette, L. (2021). twang: Toolkit for weighting and analysis of nonequivalent groups. R package version 2.1. https://CRAN.R-project.org/package=twang
+- Cham, H., & West, S. G. (2016). Propensity score analysis with missing data. *Psychological Methods, 21*(3), 427-445. https://doi.org/10.1037/met0000076
+- Bishop, C. D., Leite, W. L., & Snyder, P. A. (2018). Using propensity score weighting to reduce selection bias in large-scale data sets. *Journal of Early Intervention, 40*(4), 347-362. https://doi.org/10.1177/1053815118793430
+- Granger
+- Ho, D. E., Imai, K., King, G., & Stuart, E. A. (2011). MatchIt: Nonparametric preprocessing for parametric causal inference. *Journal of Statistical Software, 42*(8), 1-28. 
+- Leite, W. L., Jimenez, F., Kaya, Y., Stapleton, L. M., MacInnes, J. W., & Sandbach, R. (2015). An evaluation of weighting methods based on propensity scores to reduce selection bias in multilevel observational studies. *Multivariate Behavioral Research, 50*(3), 265-284. https://doi.org/10.1080/00273171.2014.991018
+- Rosenbaum, P. R., & Rubin, D. B. (1983). The central role of the propensity score in observational studies for causal effects. *Biometrika, 70*, 41-55.
+- Thoemmes, R. J., & Kim, E. S. (2011). A systematic review of propensity score methods in the social sciences. *Multivariate Behavioral Research, 46*(1),  90-118. https://doi.org/10.1080/00273171.2011.540475
+- U.S. Department of Education, Institute of Education Sciences, & What Works Clearinghouse. (2013). *What works clearinghouse: Procedures and standards handbook* (Version 3.0). Washington, DC.
