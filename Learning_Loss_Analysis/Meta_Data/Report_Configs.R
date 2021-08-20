@@ -11,8 +11,8 @@ report.config <- list(
     # title = "Demonstration COVID Learning Loss Analysis", auto configured if NULL based on client state.name
     # subtitle = "Academic Impact During the COVID-19 Pandemic", # auto configured if NULL
     # author.names = c("Damian W. Betebenner",  "Adam R. VanIwaarden", "Nathan Dadey", "Michelle Boyer"),
-    author.names = c("Damian W. Betebenner, Adam R. VanIwaarden", "Nathan Dadey and Michelle Boyer", "The Center for Assessment"),
-    # author.affil = c("Center for Assessment", "Center for Assessment"), # Only needed if different affiliations. - Could also just be single "Center for Assessment"
+    author.names = c("Damian W. Betebenner, Adam R. VanIwaarden,<br><br>Nathan Dadey and Michelle Boyer"),
+    # author.affil = "Center for Assessment", # Only needed if different affiliations. - Could also just be single "Center for Assessment"
     # date = "March 2021",  #  auto configured to MONTH YEAR format
     executive.summary = TRUE,
     draft = TRUE,

@@ -33,11 +33,12 @@ getFCASE <- function(variable, lookup) {
   return(paste0("fcase(", paste(tmp.fcase, collapse = ","), ")"))
 }
 
-###   .quantcut Utility directly from gofSGP
+###   .quantcut Utility directly from gofSGP (with switch to Hmisc::hdquantile!)
 
 .quantcut <- function (x, q = seq(0, 1, by = 0.25), na.rm = TRUE, dig.lab, ...) { ### From the quantcut package (thanks!!)
 	x <- round(x, digits=dig.lab)
-	quant <- quantile(x, q, na.rm = na.rm)
+	# quant <- quantile(x, q, na.rm = na.rm)
+  quant <- Hmisc::hdquantile(x, q, na.rm = na.rm) # Deal with ties/dups better.
 	dups <- duplicated(quant)
 	if (any(dups)) {
 		flag <- x %in% unique(quant[dups])

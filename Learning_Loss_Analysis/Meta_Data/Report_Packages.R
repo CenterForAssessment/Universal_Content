@@ -12,6 +12,7 @@ remotes::install_github("centerforassessment/Literasee")
 remotes::install_github("centerforassessment/cfaTools")
 remotes::install_github("centerforassessment/SGPdata")
 remotes::install_github("centerforassessment/SGP")
+remotes::install_github("centerforassessment/SGPmatrices")
 remotes::install_github("Rdatatable/data.table")
 remotes::install_github('rstudio/rmarkdown')
 remotes::install_github('rstudio/bookdown')
@@ -21,10 +22,12 @@ remotes::install_github("GRousselet/rogme")
 ###   Install/update latest packages from CRAN
 
 ##    Modeling & Output
+if (!require(Hmisc)) {
+  install.packages("Hmisc", dep=T)
+}
 if (!require(MASS)) {
   install.packages("MASS", dep=T)
 }
-
 if (!require(randomForest)) {
   install.packages("randomForest", dep=T)
 }
